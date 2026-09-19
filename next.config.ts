@@ -5,6 +5,7 @@ export default (phase: string): NextConfig => {
   const isDev = phase === PHASE_DEVELOPMENT_SERVER;
 
   return {
+    output: "standalone",
     distDir: isDev ? ".next-dev" : ".next",
     reactStrictMode: true,
   };
