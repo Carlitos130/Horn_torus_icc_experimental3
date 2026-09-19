@@ -1,10 +1,11 @@
 {
   "name": "horn-torus-icc-model",
   "version": "0.2.0",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 -H 0.0.0.0",
-    "build": "next build",
+    "build": "next build && mkdir -p dist && cp -r .next/* dist/",
     "start": "node server.ts",
     "lint": "next lint"
   },
