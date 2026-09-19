@@ -1,0 +1,8 @@
+{
+  "name": "Horn Torus Icc Experimental",
+  "description": "Modelo topológico interactivo del inconsciente freudiano: el horn torus como límite de la familia de toros r → R (Tesis RSI-Poincaré)",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

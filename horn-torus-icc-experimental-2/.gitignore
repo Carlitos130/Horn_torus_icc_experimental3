@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+horn-torus-icc-model/
+horn-torus-icc-model-real/

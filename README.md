@@ -1,11 +1,14 @@
-<div align="center">
+# horn-torus-icc-experimental-2
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+Modelo topológico del Icc — el horn torus como límite de la familia `r → R`.
+Material de trabajo de la tesis *RSI – Poincaré*.
 
-  <h1>Built with AI Studio</h2>
+El contenido está en [`horn-torus-icc-experimental-2/`](horn-torus-icc-experimental-2/):
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+- [`familia_horn_torus.py`](horn-torus-icc-experimental-2/familia_horn_torus.py) — la familia y los invariantes exactos
+- [`diagramas_icc.py`](horn-torus-icc-experimental-2/diagramas_icc.py) — las ocho figuras y los dos visores
+- [`test_retrocompatibilidad.py`](horn-torus-icc-experimental-2/test_retrocompatibilidad.py) — el control de integridad
+- [`docs/capitulo_horn_torus_icc.md`](horn-torus-icc-experimental-2/docs/capitulo_horn_torus_icc.md) — el capítulo completo
+- [README interno](horn-torus-icc-experimental-2/README.md) — descripción detallada
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
-
-</div>
+![Corte axial del horn torus del Icc](horn-torus-icc-experimental-2/figures/fig1_corte_axial.png)
