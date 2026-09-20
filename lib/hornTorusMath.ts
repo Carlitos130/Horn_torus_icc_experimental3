@@ -93,6 +93,258 @@ export const COLOR_PALETTE = {
   clifford: "#8b5cf6",
 };
 
+// =============================================================================
+// INTERFAZ PARA CIRCULACIÓN DE SIGNIFICANTE/SIGNIFICADO
+// =============================================================================
+
+export interface SignificanteCirculacion {
+  nombre: string;           // Nombre del significante (ej: "madre", "padre", "falo")
+  significado: string;       // Significado asociado (puede ser vacío o múltiple)
+  posicionInicial: [number, number]; // Posición inicial (u, v) en el toro
+  trayectoria: [number, number][];   // Secuencia de posiciones en la circulación
+  color: string;            // Color para visualización
+  velocidad: number;        // Velocidad de circulación (0-1)
+  direccion: 'clockwise' | 'counterclockwise'; // Dirección de circulación
+}
+
+export interface CirculacionParams {
+  significante: string;
+  significado: string;
+  uStart: number;
+  vStart: number;
+  numPasos: number;
+  deltaU: number;
+  color?: string;
+}
+
+export class SignificanteTracker {
+  private model: HornTorusFamiliaModel;
+  private circulaciones: SignificanteCirculacion[] = [];
+  
+  constructor(model: HornTorusFamiliaModel) {
+    this.model = model;
+  }
+  
+  /**
+   * Genera una trayectoria de circulación para un significante
+   * 
+   * METAPSICOLOGÍA (Lacan):
+   * El significante circula en la cadena significante (S). Esta circulación
+   * es lo que produce efectos de significado, pero el significado nunca
+   * se fija completamente ("el significante representa al sujeto para
+   * otro significante", Sem. XI).
+   * 
+   * En el horn torus:
+   * - La circulación ocurre a lo largo de la curva S (Significante)
+   * - Puede seguir el meridiano (u) o el paralelo (v)
+   * - La dirección indica el sentido de la cadena
+   * 
+   * @param params - Parámetros de circulación
+   * @returns Objeto SignificanteCirculacion con la trayectoria completa
+   */
+  public generarCirculacion(params: CirculacionParams): SignificanteCirculacion {
+    const {
+      significante,
+      significado,
+      uStart,
+      vStart,
+      numPasos = 100,
+      deltaU = (2 * Math.PI) / numPasos,
+      color = COLOR_PALETTE.S,
+    } = params;
+    
+    const trayectoria: [number, number][] = [];
+    
+    for (let i = 0; i <= numPasos; i++) {
+      const u = (uStart + i * deltaU) % (2 * Math.PI);
+      const v = vStart; // Circulación a v constante (paralelo)
+      trayectoria.push([u, v]);
+    }
+    
+    const circulacion: SignificanteCirculacion = {
+      nombre: significante,
+      significado: significado,
+      posicionInicial: [uStart, vStart],
+      trayectoria,
+      color,
+      velocidad: 0.5,
+      direccion: deltaU > 0 ? 'clockwise' : 'counterclockwise',
+    };
+    
+    this.circulaciones.push(circulacion);
+    
+    return circulacion;
+  }
+  
+  /**
+   * Genera circulación a lo largo de la curva S (Significante)
+   * 
+   * METAPSICOLOGÍA:
+   * Esta es la circulación "canónica" del significante en la cadena.
+   * Sigue la curva S que representa la cadena significante en el toro.
+   */
+  public generarCirculacionEnS(
+    significante: string,
+    significado: string,
+    numPasos: number = 100
+  ): SignificanteCirculacion {
+    const curves = this.model.getSection4Curves(numPasos);
+    const sCurve = curves.S;
+    
+    // Extraer coordenadas (u,v) de la curva S
+    // La curva S está en coordenadas cartesianas, necesitamos invertir
+    const trayectoria: [number, number][] = [];
+    
+    for (let i = 0; i <= numPasos; i++) {
+      // Para simplificar, generamos puntos a lo largo de u con v constante
+      // usando la fase v_S del modelo
+      const u = (i / numPasos) * 2 * Math.PI;
+      const v = this.model.v_S;
+      trayectoria.push([u, v]);
+    }
+    
+    const circulacion: SignificanteCirculacion = {
+      nombre: significante,
+      significado: significado,
+      posicionInicial: [0, this.model.v_S],
+      trayectoria,
+      color: COLOR_PALETTE.S,
+      velocidad: 0.5,
+      direccion: 'clockwise',
+    };
+    
+    this.circulaciones.push(circulacion);
+    
+    return circulacion;
+  }
+  
+  /**
+   * Genera circulación entre significante y significado
+   * 
+   * METAPSICOLOGÍA:
+   * En la teoría lacaniana, el significante y el significado están
+   * separados por la barra del sujeto (S/s). El significante circula
+   * buscando al significado, pero nunca lo alcanza completamente.
+   * 
+   * En el horn torus:
+   * - El significante está en la curva S
+   * - El significado puede estar en la curva I (Imagen) o Σ (Síntoma)
+   * - La circulación muestra este "buscar sin encontrar"
+   */
+  public generarCirculacionSignificanteSignificado(
+    significante: string,
+    significado: string,
+    numPasos: number = 100
+  ): { significante: SignificanteCirculacion; significado: SignificanteCirculacion } {
+    // Circulación del significante en curva S
+    const circSignificante = this.generarCirculacionEnS(significante, "", numPasos);
+    
+    // Circulación del significado en curva I (Imagen)
+    const curves = this.model.getSection4Curves(numPasos);
+    const trayectoriaI: [number, number][] = [];
+    
+    for (let i = 0; i <= numPasos; i++) {
+      const u = (i / numPasos) * 2 * Math.PI;
+      const v = this.model.v_I;
+      trayectoriaI.push([u, v]);
+    }
+    
+    const circSignificado: SignificanteCirculacion = {
+      nombre: `significado: ${significado}`,
+      significado: significado,
+      posicionInicial: [0, this.model.v_I],
+      trayectoria: trayectoriaI,
+      color: COLOR_PALETTE.I,
+      velocidad: 0.4,
+      direccion: 'counterclockwise',
+    };
+    
+    this.circulaciones.push(circSignificado);
+    
+    return { significante: circSignificante, significado: circSignificado };
+  }
+  
+  /**
+   * Genera circulación que pasa por la zona de ruptura
+   * 
+   * METAPSICOLOGÍA:
+   * Cuando el significante circula cerca del fantasma (u_F, v_F),
+   * entra en la zona de ruptura (A ≤ π/4) donde ocurre
+   * la angustia de castración.
+   */
+  public generarCirculacionConRuptura(
+    significante: string,
+    numPasos: number = 100
+  ): SignificanteCirculacion {
+    const trayectoria: [number, number][] = [];
+    const u_F = this.model.u_F;
+    const v_F = this.model.v_F;
+    const A_cr = this.model.A_cr;
+    
+    for (let i = 0; i <= numPasos; i++) {
+      const u = (i / numPasos) * 2 * Math.PI;
+      // Oscilar alrededor de v_F con amplitud que entra en zona de ruptura
+      const v = v_F + A_cr * 0.8 * Math.sin((i / numPasos) * 2 * Math.PI);
+      trayectoria.push([u, v]);
+    }
+    
+    const circulacion: SignificanteCirculacion = {
+      nombre: significante,
+      significado: "Ruptura / Angustia de castración",
+      posicionInicial: [0, v_F],
+      trayectoria,
+      color: "#dc2626", // Rojo intenso para ruptura
+      velocidad: 0.3,
+      direccion: 'clockwise',
+    };
+    
+    this.circulaciones.push(circulacion);
+    
+    return circulacion;
+  }
+  
+  /**
+   * Obtiene todas las circulaciones generadas
+   */
+  public getCirculaciones(): SignificanteCirculacion[] {
+    return [...this.circulaciones];
+  }
+  
+  /**
+   * Limpia todas las circulaciones
+   */
+  public clearCirculaciones(): void {
+    this.circulaciones = [];
+  }
+  
+  /**
+   * Genera puntos 3D para visualizar una circulación
+   */
+  public getCirculacion3D(circulacion: SignificanteCirculacion): [number, number, number][] {
+    return circulacion.trayectoria.map(([u, v]) => {
+      return this.model.punto(u, v);
+    });
+  }
+  
+  /**
+   * Verifica si un punto de la circulación está en zona de ruptura
+   */
+  public checkRupturaEnTrayectoria(circulacion: SignificanteCirculacion): boolean[] {
+    return circulacion.trayectoria.map(([u, v]) => {
+      return this.model.checkRupture(u, v);
+    });
+  }
+  
+  /**
+   * Calcula la angustia en cada punto de la circulación
+   */
+  public calculateAngustiaEnTrayectoria(circulacion: SignificanteCirculacion): number[] {
+    return circulacion.trayectoria.map(([u, v]) => {
+      return this.model.calculateAngustia(u, v);
+    });
+  }
+}
+
 export interface InvariantSummary {
   r_over_R: number;
   R: number;

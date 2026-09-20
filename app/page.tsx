@@ -13,6 +13,7 @@ import { FiguresGallery } from "@/components/FiguresGallery";
 import { PsychometricSandbox } from "@/components/PsychometricSandbox";
 import { DocsReader } from "@/components/DocsReader";
 import { RetrocompatibilityTest } from "@/components/RetrocompatibilityTest";
+import { SignificanteCirculacionViewer } from "@/components/SignificanteCirculacionViewer";
 import {
   Orbit,
   Layers,
@@ -29,7 +30,7 @@ import {
 } from "lucide-react";
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<"visor" | "figuras" | "scl" | "docs" | "test">("visor");
+  const [activeTab, setActiveTab] = useState<"visor" | "figuras" | "scl" | "docs" | "test" | "circulacion">("visor");
 
   // Model parameters
   const [rOverR, setROverR] = useState<number>(1.0);
@@ -145,6 +146,17 @@ export default function HomePage() {
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Test Retrocompatibilidad</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("circulacion")}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === "circulacion"
+                  ? "bg-indigo-600 text-white shadow-sm font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Circulaciu00f3n S/S</span>
             </button>
           </nav>
         </div>
