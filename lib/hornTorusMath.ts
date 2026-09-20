@@ -31,6 +31,7 @@
  * 2. EL FANTASMA (u_F, v_F): Núcleo fantasmático, nunca visitado pero rodeado
  *    - Correspondencia con "Ein Kind wird geschlagen" (Freud GW XII)
  *    - Defecto topológico en la superficie de inscripción
+ *    - Aquí el significante NO puede simbolizar: surge la angustia (LO REAL)
  * 
  * 3. EL TRAUMA (u_T, v_T): Marca alcanzable por Nachträglichkeit
  *    - Caso Emma y el trauma de Kleider (Freud GW II/III, Entwurf)
@@ -42,10 +43,11 @@
  *    - Σ: Síntoma (formación del inconsciente)
  *    - Pulsión: Hilo pulsional (Trieb) pegado al borde de I
  * 
- * 5. MECANISMOS DE LA ANGUSTIA:
- *    - Métrico: Cerca del trauma, la angustia crece al acercarse (graduado)
- *    - Topológico: Cerca del fantasma, el agujero no puede atravesarse
- *      (dos caminos no homotópicos al rodearlo)
+ * 5. MECANISMOS DE LA ANGUSTIA (LO REAL):
+ *    - La angustia NO es un orden, es el EFECTO de lo real
+ *    - Métrico: Cerca del fantasma (u_F, v_F), A(u,v) → 0, angustia emerge
+ *    - Zona de Ruptura: A ≤ π/4 donde el significante no puede simbolizar
+ *    - "La angustia es lo que no engaña" (Lacan, Sem. X)
  * 
  * =============================================================================
  */
