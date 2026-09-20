@@ -156,7 +156,7 @@ export default function HomePage() {
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Circulaciu00f3n S/S</span>
+              <span>Circulación S/s</span>
             </button>
           </nav>
         </div>
@@ -364,6 +364,8 @@ export default function HomePage() {
         {activeTab === "docs" && <DocsReader />}
 
         {activeTab === "test" && <RetrocompatibilityTest />}
+
+        {activeTab === "circulacion" && <SignificanteCirculacionViewer model={model} />}
       </main>
 
       {/* Footer */}

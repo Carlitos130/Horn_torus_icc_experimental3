@@ -262,6 +262,7 @@ export const FiguresGallery: React.FC = () => {
               src={selectedFig.src}
               alt={selectedFig.title}
               fill
+              sizes="(max-width: 1024px) 100vw, 58vw"
               className="object-contain"
               priority
               referrerPolicy="no-referrer"

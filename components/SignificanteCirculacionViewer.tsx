@@ -323,9 +323,11 @@ export const SignificanteCirculacionViewer: React.FC<SignificanteCirculacionView
       >
         <SignificanteCirculacionCanvas
           model={model}
+          circulaciones={circulaciones}
           circulacionLines={circulacionLines}
           animatedPoints={animatedPoints}
           isAnimating={isAnimating}
+          setIsAnimating={setIsAnimating}
           setAnimationProgress={setAnimationProgress}
           showAngustia={showAngustia}
           showRupturaZone={showRupturaZone}
@@ -386,9 +388,11 @@ export const SignificanteCirculacionViewer: React.FC<SignificanteCirculacionView
 // Separate component for Three.js canvas to avoid re-renders
 interface SignificanteCirculacionCanvasProps {
   model: HornTorusFamiliaModel;
+  circulaciones: SignificanteCirculacion[];
   circulacionLines: CirculacionLine[];
   animatedPoints: CirculacionPoint[];
   isAnimating: boolean;
+  setIsAnimating: (animating: boolean) => void;
   setAnimationProgress: (progress: number) => void;
   showAngustia: boolean;
   showRupturaZone: boolean;
@@ -398,16 +402,18 @@ interface SignificanteCirculacionCanvasProps {
 
 const SignificanteCirculacionCanvas: React.FC<SignificanteCirculacionCanvasProps> = ({
   model,
+  circulaciones,
   circulacionLines,
   animatedPoints,
   isAnimating,
+  setIsAnimating,
   setAnimationProgress,
   showAngustia,
   showRupturaZone,
   angustiaValues,
   rupturaFlags,
 }) => {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const rendererRef = React.useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = React.useRef<THREE.Scene | null>(null);
   const cameraRef = React.useRef<THREE.PerspectiveCamera | null>(null);
@@ -417,15 +423,15 @@ const SignificanteCirculacionCanvas: React.FC<SignificanteCirculacionCanvasProps
 
   // Initialize Three.js scene
   React.useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!container) return;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#090d16");
     sceneRef.current = scene;
 
-    const width = canvas.clientWidth;
-    const height = canvas.clientHeight;
+    const width = container.clientWidth || 800;
+    const height = container.clientHeight || 400;
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     camera.position.set(40, 35, 45);
     cameraRef.current = camera;
@@ -433,7 +439,8 @@ const SignificanteCirculacionCanvas: React.FC<SignificanteCirculacionCanvasProps
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    canvas.appendChild(renderer.domElement);
+    container.innerHTML = "";
+    container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -470,8 +477,9 @@ const SignificanteCirculacionCanvas: React.FC<SignificanteCirculacionCanvasProps
 
     // Resize handler
     const handleResize = () => {
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
+      if (!container) return;
+      const width = container.clientWidth || 800;
+      const height = container.clientHeight || 400;
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
@@ -484,8 +492,8 @@ const SignificanteCirculacionCanvas: React.FC<SignificanteCirculacionCanvasProps
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       controls.dispose();
       renderer.dispose();
-      while (canvas.firstChild) {
-        canvas.removeChild(canvas.firstChild);
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
       }
     };
   }, []);
@@ -701,5 +709,5 @@ const SignificanteCirculacionCanvas: React.FC<SignificanteCirculacionCanvasProps
     };
   }, [isAnimating, circulaciones.length]);
 
-  return <canvas ref={canvasRef} className="w-full h-full" />;
+  return <div ref={containerRef} className="w-full h-full" />;
 };
