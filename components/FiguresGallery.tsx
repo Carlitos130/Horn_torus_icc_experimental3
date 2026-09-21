@@ -221,21 +221,21 @@ export const FiguresGallery: React.FC = () => {
   const selectedFig = FIGURES_DATA.find((f) => f.id === selectedFigId) || FIGURES_DATA[0];
 
   return (
-    <div className="flex flex-col gap-5 bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+    <div className="flex flex-col gap-5 bg-slate-900 rounded-xl border border-slate-800 p-5 shadow-xl text-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
         <div>
-          <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
-            <Layers className="w-4 h-4 text-indigo-600" />
+          <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
+            <Layers className="w-4 h-4 text-indigo-400" />
             Atlas de Figuras de la Tesis (RSI – Poincaré)
           </h3>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-400">
             Las 8 figuras del Capítulo 4/5 con la disciplina de estatutos metodológicos
           </p>
         </div>
       </div>
 
       {/* Tabs list */}
-      <div className="flex flex-wrap gap-1.5 p-1 bg-slate-100 rounded-lg border border-slate-200/60">
+      <div className="flex flex-wrap gap-1.5 p-1 bg-slate-950 rounded-lg border border-slate-800">
         {FIGURES_DATA.map((fig) => {
           const isActive = fig.id === selectedFigId;
           return (
@@ -244,8 +244,8 @@ export const FiguresGallery: React.FC = () => {
               onClick={() => setSelectedFigId(fig.id)}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                 isActive
-                  ? "bg-white text-indigo-700 shadow-sm font-semibold"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                  ? "bg-indigo-600 text-white shadow-sm font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/80"
               }`}
             >
               {fig.id.toUpperCase()} · {fig.section}
@@ -285,41 +285,41 @@ export const FiguresGallery: React.FC = () => {
         {/* Detailed legend & epistemological statutes */}
         <div className="lg:col-span-5 flex flex-col gap-4">
           <div>
-            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase bg-indigo-50 text-indigo-700 border border-indigo-200 mb-1">
+            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase bg-indigo-950/80 text-indigo-300 border border-indigo-700/60 mb-1">
               Capítulo {selectedFig.section}
             </span>
-            <h4 className="text-base font-bold text-slate-900">{selectedFig.title}</h4>
-            <p className="text-xs text-slate-600 mt-1 leading-relaxed">{selectedFig.summary}</p>
+            <h4 className="text-base font-bold text-slate-100">{selectedFig.title}</h4>
+            <p className="text-xs text-slate-300 mt-1 leading-relaxed">{selectedFig.summary}</p>
           </div>
 
           <div className="flex flex-col gap-2">
-            <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-              <BookOpen className="w-3.5 h-3.5 text-slate-500" />
+            <h5 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5 text-slate-400" />
               Estatuto Epistemológico de Cada Elemento
             </h5>
             <div className="flex flex-col gap-2 max-h-[380px] overflow-y-auto pr-1">
               {selectedFig.statutes.map((s, idx) => (
                 <div
                   key={idx}
-                  className="bg-slate-50 rounded-lg p-2.5 border border-slate-200/80 text-xs"
+                  className="bg-slate-950/70 rounded-lg p-2.5 border border-slate-800 text-xs"
                 >
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="font-semibold text-slate-900">{s.element}</span>
+                    <span className="font-semibold text-slate-200">{s.element}</span>
                     <span
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 border ${
                         s.statute.includes("HECHO")
-                          ? "bg-blue-100 text-blue-800"
+                          ? "bg-blue-950/60 text-blue-300 border-blue-700/60"
                           : s.statute.includes("CITA")
-                          ? "bg-emerald-100 text-emerald-800"
+                          ? "bg-emerald-950/60 text-emerald-300 border-emerald-700/60"
                           : s.statute.includes("AXIOMA")
-                          ? "bg-purple-100 text-purple-800"
-                          : "bg-amber-100 text-amber-800"
+                          ? "bg-purple-950/60 text-purple-300 border-purple-700/60"
+                          : "bg-amber-950/60 text-amber-300 border-amber-700/60"
                       }`}
                     >
                       {s.statute}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-600 leading-snug">{s.support}</p>
+                  <p className="text-[11px] text-slate-400 leading-snug">{s.support}</p>
                 </div>
               ))}
             </div>
