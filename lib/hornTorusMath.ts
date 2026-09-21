@@ -452,54 +452,23 @@ export class VectorCirculacionGenerator {
   }
 
   /**
-   * Genera vectores de circulación para la fantasía (punto sin circulación)
+   * Genera la representación de la fantasía: anclada en el inconsciente.
    * 
-   * METAPSICOLOGÍA:
-   * La fantasía es un punto fijo donde NO hay circulación.
-   * Los VR en la fantasía son nulos o apuntan hacia el punto fantasma.
+   * METAPSICOLOGÍA (Lacan):
+   * La fantasía fundamental ($ ◇ a) está anclada en el inconsciente.
+   * Es un punto fijo estructural donde NO hay circulación ni emisión de vectores:
+   * NO SALEN VECTORES de la fantasía.
    * 
-   * @param numPuntos - Número de vectores alrededor de la fantasía
-   * @returns Trayectoria de vectores en la fantasía
+   * @returns Trayectoria de fantasía anclada en el inconsciente sin emisión de vectores
    */
-  public generarVRFantasia(numPuntos: number = 30): VectorCirculacionTrayectoria {
-    const puntosVR: VectorCirculacion[] = [];
-    const u_F = this.model.u_F;
-    const v_F = this.model.v_F;
-    
-    for (let i = 0; i <= numPuntos; i++) {
-      const angulo = (i / numPuntos) * 2 * Math.PI;
-      
-      // Vectores que apuntan TODOS hacia el punto fantasma (sin circulación)
-      const u = u_F + 0.2 * Math.cos(angulo);
-      const v = v_F + 0.2 * Math.sin(angulo);
-      
-      // Vector que apunta hacia el punto fantasma
-      const dx = u_F - u;
-      const dy = v_F - v;
-      const dz = 0;
-      
-      const mag = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      
-      const vector: VectorCirculacion = {
-        nombre: `VR-Fantasia-${i}`,
-        cinta: 'Sigma', // La fantasía está en Σ
-        posicion: [u, v],
-        direccion: [dx / mag, dy / mag, dz / mag],
-        magnitud: 0.0, // Magnitud cero: NO hay circulación
-        sentido: 'clockwise',
-        color: COLOR_PALETTE.fant,
-        esTangente: false,
-      };
-
-      puntosVR.push(vector);
-    }
-
+  public generarVRFantasia(): VectorCirculacionTrayectoria {
+    // La fantasía está anclada en el inconsciente (u_F, v_F) y NO emite vectores
     const trayectoria: VectorCirculacionTrayectoria = {
-      nombre: 'VR-Fantasia',
+      nombre: 'VR-Fantasia (Anclado en el Inconsciente)',
       cinta: 'Sigma',
-      puntos: puntosVR,
+      puntos: [], // Sin emisión de vectores: no salen vectores
       color: COLOR_PALETTE.fant,
-      velocidad: 0.0, // Velocidad cero: NO hay circulación
+      velocidad: 0.0, // Velocidad cero: punto fijo / anclaje
     };
 
     this.vectores.push(trayectoria);
