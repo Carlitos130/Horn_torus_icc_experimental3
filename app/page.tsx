@@ -153,13 +153,13 @@ export default function HomePage() {
               onClick={() => setActiveTab("circulacion")}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeTab === "circulacion"
-
-        {activeTab === "vectores" && <VectorCirculacionViewer model={model} />}
                   ? "bg-indigo-600 text-white shadow-sm font-semibold"
                   : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
+              <span>Circulación S/s</span>
+            </button>
             <button
               onClick={() => setActiveTab("vectores")}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
@@ -170,8 +170,6 @@ export default function HomePage() {
             >
               <Wind className="w-3.5 h-3.5" />
               <span>Vectores VR (Cintas)</span>
-            </button>
-              <span>Circulación S/s</span>
             </button>
           </nav>
         </div>
@@ -382,6 +380,7 @@ export default function HomePage() {
 
         {activeTab === "circulacion" && <SignificanteCirculacionViewer model={model} />}
 
+        {activeTab === "vectores" && <VectorCirculacionViewer model={model} />}
       </main>
 
       {/* Footer */}

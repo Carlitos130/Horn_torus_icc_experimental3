@@ -1,14 +1,14 @@
 import type { NextConfig } from "next";
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
-const isDev = process.env.NODE_ENV !== "production";
+export default function nextConfig(phase: string): NextConfig {
+  const isDevServer = phase === PHASE_DEVELOPMENT_SERVER;
 
-const nextConfig: NextConfig = {
-  // Isolate development cache and builds (.next-dev) from production builds (.next)
-  // to avoid runtime conflicts and missing chunk errors (e.g. ./331.js) during concurrent builds
-  distDir: isDev ? ".next-dev" : ".next",
-  output: isDev ? undefined : (process.env.VERCEL ? undefined : "standalone"),
-  reactStrictMode: true,
-};
-
-export default nextConfig;
-
+  return {
+    // Isolate development cache (.next-dev) only when running the development server ('next dev'),
+    // so production builds ('next build') generate standard production artifacts in .next
+    distDir: isDevServer ? ".next-dev" : ".next",
+    output: isDevServer ? undefined : "standalone",
+    reactStrictMode: true,
+  };
+}

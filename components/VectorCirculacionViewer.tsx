@@ -224,27 +224,27 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
   }, [trayectorias, model]);
 
   return (
-    <div className="flex flex-col gap-4 bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+    <div className="flex flex-col gap-4 bg-slate-900 rounded-xl border border-slate-800 p-5 shadow-sm text-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
         <div>
-          <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
-            <RotateCcw className="w-4 h-4 text-indigo-600" />
+          <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
+            <RotateCcw className="w-4 h-4 text-indigo-400" />
             Vectores de Circulación (VR) en las Cintas S, I, Σ
           </h3>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-400">
             Circulación de vectores tangentes a las cintas desde el agujero de la voz
           </p>
         </div>
       </div>
 
       {/* Control Panel */}
-      <div className="bg-slate-50 rounded-lg p-4 border border-slate-200 flex flex-col gap-3">
+      <div className="bg-slate-950/70 rounded-lg p-4 border border-slate-800 flex flex-col gap-3">
         
         {/* Botones principales */}
         <div className="flex flex-wrap gap-2">
           <button
             onClick={handleGenerateCompleteSystem}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg shadow-sm transition-all"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-lg shadow-sm transition-all"
           >
             <Sparkles className="w-4 h-4" />
             <span>Sistema Completo (Voz + Cintas + Trauma + Fantasía)</span>
@@ -252,7 +252,7 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
           
           <button
             onClick={handleGenerateVozVectors}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-indigo-300 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 hover:text-indigo-900 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-indigo-700 bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-300 transition-colors"
           >
             <Target className="w-3.5 h-3.5" />
             <span>Vectores desde la Voz</span>
@@ -260,7 +260,7 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
           
           <button
             onClick={handleGenerateAllCintas}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 hover:text-emerald-900 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-emerald-700 bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Todas las Cintas</span>
@@ -268,21 +268,22 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
         </div>
 
         {/* Botones individuales por cinta */}
-        <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200">
+        <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-800">
           {cintas.map((cinta) => (
             <button
               key={cinta}
               onClick={() => handleGenerateCintaVectors(cinta)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border hover:brightness-125 transition-all"
               style={{
                 borderColor: COLOR_PALETTE[cinta as keyof typeof COLOR_PALETTE],
-                backgroundColor: `${COLOR_PALETTE[cinta as keyof typeof COLOR_PALETTE]}15`,
+                backgroundColor: `${COLOR_PALETTE[cinta as keyof typeof COLOR_PALETTE]}20`,
+                color: COLOR_PALETTE[cinta as keyof typeof COLOR_PALETTE],
               }}
             >
-              <span className="font-semibold" style={{ color: COLOR_PALETTE[cinta as keyof typeof COLOR_PALETTE] }}>
+              <span className="font-semibold">
                 {cinta}
               </span>
-              <span className="text-slate-600">
+              <span className="text-slate-300 text-[11px]">
                 {cintaLabels[cinta]}
               </span>
             </button>
@@ -290,10 +291,10 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
         </div>
 
         {/* Botones para trauma y fantasía */}
-        <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200">
+        <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-800">
           <button
             onClick={handleGenerateTraumaVectors}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-900 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-rose-800 bg-rose-950/60 hover:bg-rose-900/60 text-rose-300 transition-colors"
           >
             <X className="w-3.5 h-3.5" />
             <span>Trauma (S-E-I Congelado)</span>
@@ -301,7 +302,7 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
           
           <button
             onClick={handleGenerateFantasiaVectors}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-700 hover:text-purple-900 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-purple-800 bg-purple-950/60 hover:bg-purple-900/60 text-purple-300 transition-colors"
           >
             <Eye className="w-3.5 h-3.5" />
             <span>Fantasía (Sin Circulación)</span>
@@ -309,7 +310,7 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
           
           <button
             onClick={handleClearAll}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Limpiar Todo</span>
@@ -317,11 +318,11 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
         </div>
 
         {/* Controles de animación */}
-        <div className="flex items-center gap-4 pt-2 border-t border-slate-200">
+        <div className="flex items-center gap-4 pt-2 border-t border-slate-800">
           <button
             onClick={toggleAnimation}
             disabled={trayectorias.length === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-all"
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg shadow-sm transition-all"
           >
             {isAnimating ? (
               <>
@@ -337,7 +338,7 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
           </button>
           
           <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-xs text-slate-600">
+            <label className="flex items-center gap-2 text-xs text-slate-300">
               <span>Escala de Flechas:</span>
               <input
                 type="range"
@@ -346,9 +347,9 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
                 step="0.1"
                 value={arrowScale}
                 onChange={(e) => setArrowScale(parseFloat(e.target.value))}
-                className="w-24 accent-indigo-600"
+                className="w-24 accent-indigo-500 cursor-pointer"
               />
-              <span className="font-mono text-[10px] w-8 text-right">{arrowScale.toFixed(1)}</span>
+              <span className="font-mono text-slate-400">{arrowScale.toFixed(1)}x</span>
             </label>
           </div>
         </div>
@@ -356,22 +357,22 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
 
       {/* Explicación teórica */}
       {trayectorias.length > 0 && (
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-3 text-xs">
+        <div className="bg-slate-950/70 border border-indigo-900/40 rounded-lg p-3.5 text-xs text-slate-300">
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0">
-              <Sparkles className="w-4 h-4 text-indigo-700" />
+            <div className="flex-shrink-0 mt-0.5">
+              <Sparkles className="w-4 h-4 text-indigo-400" />
             </div>
-            <div className="text-indigo-900/95 leading-relaxed">
-              <p className="font-semibold text-indigo-950 mb-1">
+            <div className="text-slate-300 leading-relaxed">
+              <p className="font-semibold text-indigo-300 mb-1 tracking-wide">
                 TEORÍA DE LOS VECTORES DE CIRCULACIÓN (VR):
               </p>
-              <ul className="list-disc list-inside space-y-0.5 ml-2">
-                <li><strong>LA VOZ (0,0,0):</strong> Origen de los VR. Emite vectores que circulan por las cintas S, I, Σ a través de las pulsiones.</li>
-                <li><strong>CINTAS S, I, Σ:</strong> Los VR son tangentes a cada cinta y transportan energía pulsional. Circulan en sentido clockwise o counterclockwise.</li>
-                <li><strong>TRAUMA:</strong> Punto donde S-E-I está <em>congelado</em> por la Nachträglichkeit. Los VR tienen magnitud reducida (0.3). <em>El trauma SE PUEDE RESOLVER</em> al circular los VR.</li>
-                <li><strong>FANTASÍA:</strong> Punto fijo donde <em>NO HAY CIRCULACIÓN</em>. Los VR apuntan hacia el punto fantasma con magnitud cero.</li>
-                <li><strong>LO Icc:</strong> <em>NO todo lo Icc es reprimido</em>. Lo reprimido (ICC) puede volver a descifrarse. La fantasía tiene puntos no simbolizados que NO pueden volverse conscientes.</li>
-                <li><strong>CONSTRUCCIÓN:</strong> "Como pegan a un niño" - Lo Icc se construye a través de identificaciones primarias.</li>
+              <ul className="list-disc list-inside space-y-1 ml-1 text-slate-300">
+                <li><strong className="text-slate-100">LA VOZ (0,0,0):</strong> Origen de los VR. Emite vectores que circulan por las cintas S, I, Σ a través de las pulsiones.</li>
+                <li><strong className="text-slate-100">CINTAS S, I, Σ:</strong> Los VR son tangentes a cada cinta y transportan energía pulsional. Circulan en sentido horario o antihorario.</li>
+                <li><strong className="text-slate-100">TRAUMA:</strong> Punto donde S-E-I está <em>congelado</em> por la Nachträglichkeit. Los VR tienen magnitud reducida (0.3). <em>El trauma SE PUEDE RESOLVER</em> al circular los VR.</li>
+                <li><strong className="text-slate-100">FANTASÍA:</strong> Punto fijo donde <em>NO HAY CIRCULACIÓN</em>. Los VR apuntan hacia el punto fantasma con magnitud cero.</li>
+                <li><strong className="text-slate-100">LO Icc:</strong> <em>NO todo lo Icc es reprimido</em>. Lo reprimido (ICC) puede volver a descifrarse. La fantasía tiene puntos no simbolizados que NO pueden volverse conscientes.</li>
+                <li><strong className="text-slate-100">CONSTRUCCIÓN:</strong> &quot;Pegan a un niño&quot; - Lo Icc se construye a través de identificaciones primarias.</li>
               </ul>
             </div>
           </div>
@@ -380,7 +381,7 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
 
       {/* Visualización 3D */}
       <div 
-        className="relative w-full h-[400px] rounded-xl overflow-hidden bg-slate-950 border border-slate-800"
+        className="relative w-full h-[400px] rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shadow-inner"
         id="vector-circulacion-canvas"
       >
         <VectorCirculacionCanvas
@@ -389,6 +390,7 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
           trayectorias3D={trayectorias3D}
           isAnimating={isAnimating}
           setIsAnimating={setIsAnimating}
+          animationProgress={animationProgress}
           setAnimationProgress={setAnimationProgress}
           showVozVectors={showVozVectors}
           showTraumaVectors={showTraumaVectors}
@@ -399,9 +401,9 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
 
       {/* Información de trayectorias activas */}
       {trayectorias.length > 0 && (
-        <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+        <div className="bg-slate-950/70 rounded-lg p-3.5 border border-slate-800 text-slate-200">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-slate-800 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
               Trayectorias Activas ({trayectorias.length})
             </span>
           </div>
@@ -412,23 +414,23 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
                 key={idx}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium"
                 style={{
-                  backgroundColor: `${trayectoria.color}20`,
+                  backgroundColor: `${trayectoria.color}25`,
                   color: trayectoria.color,
-                  border: `1px solid ${trayectoria.color}40`
+                  border: `1px solid ${trayectoria.color}60`
                 }}
               >
                 <span className="font-semibold">{trayectoria.nombre}</span>
-                <span className="opacity-70">
+                <span className="opacity-80">
                   (Cinta: {cintaLabels[trayectoria.cinta] || trayectoria.cinta})
                 </span>
-                <span className="text-[10px] opacity-50">
+                <span className="text-[10px] opacity-60">
                   | V: {trayectoria.velocidad.toFixed(1)} | P: {trayectoria.puntos.length}
                 </span>
               </div>
             ))}
           </div>
           
-          <div className="mt-3 pt-3 border-t border-slate-200 text-[11px] text-slate-600">
+          <div className="mt-3 pt-3 border-t border-slate-800 text-[11px] text-slate-400">
             <div className="flex items-center flex-wrap gap-4">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLOR_PALETTE.S }} />
@@ -447,7 +449,7 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
                 <span>Pulsión</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-black" />
+                <span className="w-2.5 h-2.5 rounded-full border border-white bg-black" />
                 <span>Voz (Origen)</span>
               </div>
               <div className="flex items-center gap-2">
@@ -462,18 +464,18 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
           </div>
           
           {showTraumaVectors && (
-            <div className="mt-3 pt-2 border-t border-rose-200 bg-rose-50 rounded p-2 text-[10px] text-rose-800">
-              <Heart className="w-3 h-3 inline-block mr-1" />
-              <strong>TRAUMA (S-E-I Congelado):</strong> Los vectores tienen magnitud reducida (0.3). 
+            <div className="mt-3 pt-2.5 border-t border-rose-900/60 bg-rose-950/40 rounded p-2.5 text-[11px] text-rose-200">
+              <Heart className="w-3.5 h-3.5 inline-block mr-1.5 text-rose-400" />
+              <strong className="text-rose-300">TRAUMA (S-E-I Congelado):</strong> Los vectores tienen magnitud reducida (0.3). 
               Representan el nudo S-E-I congelado por la Nachträglichkeit. 
-              <em>El trauma SE PUEDE RESOLVER</em> al circular los VR por las cintas.
+              <em> El trauma SE PUEDE RESOLVER</em> al circular los VR por las cintas.
             </div>
           )}
           
           {showFantasiaVectors && (
-            <div className="mt-3 pt-2 border-t border-purple-200 bg-purple-50 rounded p-2 text-[10px] text-purple-800">
-              <Eye className="w-3 h-3 inline-block mr-1" />
-              <strong>FANTASÍA:</strong> Punto fijo donde <em>NO HAY CIRCULACIÓN</em>. 
+            <div className="mt-3 pt-2.5 border-t border-purple-900/60 bg-purple-950/40 rounded p-2.5 text-[11px] text-purple-200">
+              <Eye className="w-3.5 h-3.5 inline-block mr-1.5 text-purple-400" />
+              <strong className="text-purple-300">FANTASÍA:</strong> Punto fijo donde <em>NO HAY CIRCULACIÓN</em>. 
               Los vectores apuntan hacia el punto fantasma con magnitud cero. 
               Puntos no simbolizados que NO pueden volverse conscientes.
             </div>
@@ -494,6 +496,7 @@ interface VectorCirculacionCanvasProps {
   }[];
   isAnimating: boolean;
   setIsAnimating: (animating: boolean) => void;
+  animationProgress: number;
   setAnimationProgress: (progress: number) => void;
   showVozVectors: boolean;
   showTraumaVectors: boolean;
@@ -507,6 +510,7 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
   trayectorias3D,
   isAnimating,
   setIsAnimating,
+  animationProgress,
   setAnimationProgress,
   showVozVectors,
   showTraumaVectors,
@@ -727,20 +731,18 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
 
     // 5. Dibujar las curvas S, I, Σ, Pulsión
     const curves = model.getSection4Curves(200);
-    const curveColors: Record<string, number> = {
-      S: new THREE.Color(COLOR_PALETTE.S).getHex(),
-      I: new THREE.Color(COLOR_PALETTE.I).getHex(),
-      Pulsion: new THREE.Color(COLOR_PALETTE.Pulsion).getHex(),
-      Sigma: new THREE.Color(COLOR_PALETTE.Sigma).getHex(),
-    };
+    const curveList: { name: string; points: [number, number, number][]; color: string }[] = [
+      { name: "S", points: curves.S, color: COLOR_PALETTE.S },
+      { name: "I", points: curves.I, color: COLOR_PALETTE.I },
+      { name: "Pulsion", points: curves.Pulsion, color: COLOR_PALETTE.Pulsion },
+      { name: "Sigma", points: curves.Sigma, color: COLOR_PALETTE.Sigma },
+    ];
 
-    Object.entries(curves).forEach(([name, points]) => {
-      if (name === 'fantasyPoint' || name === 'traumaPoint' || name === 'voicePoint' || name === 'lambdaInt') return;
-      
+    curveList.forEach(({ points, color }) => {
       const curvePoints = points.map(([x, y, z]) => new THREE.Vector3(x, z, -y));
       const curveGeo = new THREE.BufferGeometry().setFromPoints(curvePoints);
       const curveMat = new THREE.LineBasicMaterial({
-        color: curveColors[name] || 0x999999,
+        color: new THREE.Color(color).getHex(),
         linewidth: 3,
         transparent: true,
         opacity: 0.8,
