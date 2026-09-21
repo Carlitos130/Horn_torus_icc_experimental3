@@ -27,27 +27,63 @@
  *    - Coincide con la "Stimme des Gewissens" (voz de la conciencia) de Freud
  *    - Es el orificio sin cierre del Sem. XI de Lacan (las "orejas")
  *    - En el límite r→R, toda la circunferencia v=π colapsa a este punto
+ *    - ORIGEN DE LOS VECTORES DE CIRCULACIÓN (VR): La voz emite vectores que circulan
+ *      por las cintas S, I, Σ a través de las pulsiones
  * 
  * 2. EL FANTASMA (u_F, v_F): Núcleo fantasmático, nunca visitado pero rodeado
  *    - Correspondencia con "Ein Kind wird geschlagen" (Freud GW XII)
  *    - Defecto topológico en la superficie de inscripción
  *    - Aquí el significante NO puede simbolizar: surge la angustia (LO REAL)
+ *    - PUNTO SIN CIRCULACIÓN: La fantasía es un punto fijo donde NO hay circulación
  * 
  * 3. EL TRAUMA (u_T, v_T): Marca alcanzable por Nachträglichkeit
  *    - Caso Emma y el trauma de Kleider (Freud GW II/III, Entwurf)
  *    - Marca en la superficie alcanzable por caminos en épocas posteriores
+ *    - TRAUMA = S-E-I CONGELADO: El trauma es un nudo de S, I, Σ que está congelado
+ *      por la Nachträglichkeit, intentando desimbolizarse
+ *    - EL TRAUMA SE PUEDE RESOLVER: Al circular los VR por las cintas, el trauma
+ *      congelado puede descongelarse y re-simbolizarse
  * 
  * 4. LAS CINTAS (S, I, Σ, Pulsión): Trenza conforme al §4
  *    - S: Significante (cadena significante)
  *    - I: Imagen del cuerpo (Imago)
  *    - Σ: Síntoma (formación del inconsciente)
  *    - Pulsión: Hilo pulsional (Trieb) pegado al borde de I
+ *    - CIRCULACIÓN DE VR: Los vectores de circulación (VR) fluyen por estas cintas
  * 
- * 5. MECANISMOS DE LA ANGUSTIA (LO REAL):
+ * 5. LO Icc (Inconsciente):
+ *    - NO TODO LO Icc ES REPRIMIDO: Lo Icc incluye lo reprimido pero también lo no simbolizado
+ *    - TODO LO REPRIMIDO ES Icc: Lo reprimido puede volver a descifrarse
+ *    - LA FANTASÍA: Puntos no simbolizados que NO pueden volverse conscientes
+ *    - CONSTRUCCIÓN: "Como pegan a un niño" - Lo Icc se construye a través de identificaciones
+ *      primarias (como el niño que es pegado en la fantasía)
+ * 
+ * 6. MECANISMOS DE LA ANGUSTIA (LO REAL):
  *    - La angustia NO es un orden, es el EFECTO de lo real
  *    - Métrico: Cerca del fantasma (u_F, v_F), A(u,v) → 0, angustia emerge
  *    - Zona de Ruptura: A ≤ π/4 donde el significante no puede simbolizar
  *    - "La angustia es lo que no engaña" (Lacan, Sem. X)
+ * 
+ * =============================================================================
+ * VECTORES DE CIRCULACIÓN (VR)
+ * =============================================================================
+ * 
+ * Los VR son vectores tangentes a las cintas S, I, Σ que:
+ * 1. ORIGEN: Parten del agujero de la voz (0,0,0) cuando v=π
+ * 2. TRAYECTORIA: Siguen las curvas S, I, Σ manteniendo la tangencia
+ * 3. SENTIDO: Circulan en dirección clockwise o counterclockwise según la cinta
+ * 4. FUNCIÓN: Transportan energía pulsional y permiten la circulación del significante
+ * 
+ * PROPIEDADES:
+ * - Los VR en S: Circulan la cadena significante
+ * - Los VR en I: Circulan la imagen del cuerpo
+ * - Los VR en Σ: Circulan el síntoma
+ * - Los VR en Pulsión: Transportan la energía libidinal
+ * 
+ * TRAUMA Y CIRCULACIÓN:
+ * - El trauma congelado (S-E-I) bloquea la circulación de VR
+ * - Al circular VR por las cintas, se puede descongelar el trauma
+ * - La fantasía (punto fijo) NO tiene circulación de VR
  * 
  * =============================================================================
  */
@@ -94,6 +130,419 @@ export const COLOR_PALETTE = {
   pared: "#c9d6de", // espesor Pcs
   clifford: "#8b5cf6",
 };
+
+// =============================================================================
+// INTERFACES PARA VECTORES DE CIRCULACIÓN (VR)
+// =============================================================================
+
+export interface VectorCirculacion {
+  nombre: string;                    // Nombre del vector (ej: "VR-S", "VR-I", "VR-Sigma")
+  cinta: 'S' | 'I' | 'Sigma' | 'Pulsion';  // Cinta a la que pertenece
+  posicion: [number, number];       // Posición (u, v) en el toro
+  direccion: [number, number, number]; // Vector tangente 3D (dx, dy, dz)
+  magnitud: number;                 // Magnitud del vector
+  sentido: 'clockwise' | 'counterclockwise'; // Sentido de circulación
+  color: string;                    // Color para visualización
+  esTangente: boolean;              // Indica si es tangente a la curva
+}
+
+export interface VectorCirculacionTrayectoria {
+  nombre: string;
+  cinta: 'S' | 'I' | 'Sigma' | 'Pulsion';
+  puntos: VectorCirculacion[];      // Secuencia de vectores a lo largo de la trayectoria
+  color: string;
+  velocidad: number;                // Velocidad de circulación (0-1)
+}
+
+export interface VRParams {
+  cinta: 'S' | 'I' | 'Sigma' | 'Pulsion';
+  numPuntos: number;
+  sentido?: 'clockwise' | 'counterclockwise';
+  color?: string;
+}
+
+// =============================================================================
+// CLASE PARA GENERAR Y GESTIONAR VECTORES DE CIRCULACIÓN
+// =============================================================================
+
+export class VectorCirculacionGenerator {
+  private model: HornTorusFamiliaModel;
+  private vectores: VectorCirculacionTrayectoria[] = [];
+
+  constructor(model: HornTorusFamiliaModel) {
+    this.model = model;
+  }
+
+  /**
+   * Calcula el vector tangente a una curva en el punto (u, v)
+   * 
+   * METAPSICOLOGÍA: El vector tangente representa la dirección de circulación
+   * del significante/pulsión en cada punto de la cinta.
+   * 
+   * FÓRMULA MATEMÁTICA:
+   * Para un toro de revolución parametrizado por (u, v):
+   *   x(u,v) = (R + r·cos(v)) · cos(u)
+   *   y(u,v) = (R + r·cos(v)) · sin(u)
+   *   z(u,v) = r · sin(v)
+   * 
+   * Vector tangente en u: ∂/∂u = [- (R + r·cos(v)) · sin(u), (R + r·cos(v)) · cos(u), 0]
+   * Vector tangente en v: ∂/∂v = [- r·sin(v)·cos(u), - r·sin(v)·sin(u), r·cos(v)]
+   * 
+   * El vector tangente a la curva en (u,v) es una combinación lineal de estos.
+   * 
+   * @param u - Coordenada angular
+   * @param v - Coordenada de latitud
+   * @returns Vector tangente 3D [dx, dy, dz]
+   */
+  public calcularVectorTangente(u: number, v: number): [number, number, number] {
+    const R = this.model.R;
+    const r = this.model.r;
+    
+    // Vector tangente en u (derivada parcial respecto a u)
+    const rad = R + r * Math.cos(v);
+    const tx_u = -rad * Math.sin(u);
+    const ty_u = rad * Math.cos(u);
+    const tz_u = 0;
+    
+    // Vector tangente en v (derivada parcial respecto a v)
+    const tx_v = -r * Math.sin(v) * Math.cos(u);
+    const ty_v = -r * Math.sin(v) * Math.sin(u);
+    const tz_v = r * Math.cos(v);
+    
+    // Para la circulación a lo largo de u (meridiano), usamos el vector tangente en u
+    // Normalizamos el vector
+    const longitud = Math.sqrt(tx_u * tx_u + ty_u * ty_u + tz_u * tz_u);
+    
+    return [
+      tx_u / longitud,
+      ty_u / longitud,
+      tz_u / longitud
+    ];
+  }
+
+  /**
+   * Genera una trayectoria de vectores de circulación a lo largo de una cinta
+   * 
+   * METAPSICOLOGÍA:
+   * - Los VR circulan por las cintas S, I, Σ transportando energía pulsional
+   * - Cada vector es tangente a la curva de la cinta
+   * - El sentido de circulación depende de la cinta y la dirección elegida
+   * 
+   * @param params - Parámetros de generación
+   * @returns Trayectoria de vectores de circulación
+   */
+  public generarTrayectoriaVR(params: VRParams): VectorCirculacionTrayectoria {
+    const {
+      cinta,
+      numPuntos = 100,
+      sentido = 'clockwise',
+      color = this.getColorForCinta(cinta),
+    } = params;
+
+    // Obtener la curva correspondiente a la cinta
+    const curves = this.model.getSection4Curves(numPuntos);
+    const curva = curves[cinta];
+    
+    if (!curva || curva.length === 0) {
+      throw new Error(`No se encontró la curva para la cinta ${cinta}`);
+    }
+
+    // Obtener las coordenadas (u, v) para cada punto de la curva
+    // Necesitamos invertir el mapeo punto(u,v) -> (x,y,z) para obtener (u,v)
+    // Para simplificar, generamos puntos con u equiespaciado
+    const puntosVR: VectorCirculacion[] = [];
+    
+    for (let i = 0; i <= numPuntos; i++) {
+      const u = (i / numPuntos) * 2 * Math.PI;
+      
+      // Obtener v según la cinta
+      let v: number;
+      switch (cinta) {
+        case 'S':
+          v = this.model.v_S + 0.48 * Math.cos(u + this.model.v_S) - 0.16 * Math.sin(2 * u);
+          break;
+        case 'I':
+          v = Math.PI + 0.48 * Math.sin(u + this.model.v_I) + 0.12 * Math.cos(2 * u);
+          break;
+        case 'Sigma':
+          v = Math.PI + 0.58 * Math.sin(2 * u + this.model.v_Sigma);
+          break;
+        case 'Pulsion':
+          // Para la pulsión, usamos la curva I con desplazamiento
+          const v_I = Math.PI + 0.48 * Math.sin(u + this.model.v_I) + 0.12 * Math.cos(2 * u);
+          v = v_I + 0.14 * Math.sin(6 * u) * this.model.pulsion_attachment_strength;
+          break;
+        default:
+          v = Math.PI + 0.5 * Math.sin(u);
+      }
+
+      // Calcular vector tangente
+      const vectorTangente = this.calcularVectorTangente(u, v);
+      
+      // Ajustar sentido: invertir si es counterclockwise
+      const sentidoMultiplicador = sentido === 'counterclockwise' ? -1 : 1;
+      
+      const vectorFinal: [number, number, number] = [
+        vectorTangente[0] * sentidoMultiplicador,
+        vectorTangente[1] * sentidoMultiplicador,
+        vectorTangente[2] * sentidoMultiplicador,
+      ];
+
+      // Calcular magnitud (siempre 1 para vectores normalizados)
+      const magnitud = Math.sqrt(
+        vectorFinal[0] * vectorFinal[0] + 
+        vectorFinal[1] * vectorFinal[1] + 
+        vectorFinal[2] * vectorFinal[2]
+      );
+
+      const vectorCirculacion: VectorCirculacion = {
+        nombre: `VR-${cinta}-${i}`,
+        cinta,
+        posicion: [u, v],
+        direccion: vectorFinal,
+        magnitud,
+        sentido,
+        color,
+        esTangente: true,
+      };
+
+      puntosVR.push(vectorCirculacion);
+    }
+
+    const trayectoria: VectorCirculacionTrayectoria = {
+      nombre: `VR-${cinta}`,
+      cinta,
+      puntos: puntosVR,
+      color,
+      velocidad: 0.5,
+    };
+
+    this.vectores.push(trayectoria);
+    
+    return trayectoria;
+  }
+
+  /**
+   * Genera vectores de circulación desde el agujero de la voz
+   * 
+   * METAPSICOLOGÍA:
+   * Los VR parten del origen (la voz) y se distribuyen por las cintas.
+   * Esto representa cómo la voz emite significante que circula por S, I, Σ.
+   * 
+   * @param numRayos - Número de rayos/vectores a generar desde la voz
+   * @param longitud - Longitud de los vectores
+   * @returns Arreglo de vectores de circulación desde la voz
+   */
+  public generarVRDesdeVoz(numRayos: number = 8, longitud: number = 5): VectorCirculacion[] {
+    const vectoresDesdeVoz: VectorCirculacion[] = [];
+    
+    for (let i = 0; i < numRayos; i++) {
+      const angulo = (i / numRayos) * 2 * Math.PI;
+      
+      // Direcciones equiespaciadas en el plano XY (paralelo al plano del toro)
+      const dx = Math.cos(angulo);
+      const dy = Math.sin(angulo);
+      const dz = 0.1 * Math.sin(angulo * 2); // Pequeña variación en Z
+      
+      // Normalizar
+      const mag = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      
+      const cinta = this.determinarCintaDesdeAngulo(angulo);
+      const color = this.getColorForCinta(cinta);
+
+      const vector: VectorCirculacion = {
+        nombre: `VR-Voz-${i}`,
+        cinta,
+        posicion: [0, Math.PI], // Posición en la voz (v = π)
+        direccion: [dx / mag, dy / mag, dz / mag],
+        magnitud: longitud,
+        sentido: i % 2 === 0 ? 'clockwise' : 'counterclockwise',
+        color,
+        esTangente: false, // Estos vectores no son tangentes a una curva específica
+      };
+
+      vectoresDesdeVoz.push(vector);
+    }
+
+    return vectoresDesdeVoz;
+  }
+
+  /**
+   * Determina a qué cinta pertenece un ángulo dado
+   */
+  private determinarCintaDesdeAngulo(angulo: number): 'S' | 'I' | 'Sigma' | 'Pulsion' {
+    const normalizado = angulo % (2 * Math.PI);
+    
+    if (normalizado < Math.PI / 2) return 'S';
+    if (normalizado < Math.PI) return 'I';
+    if (normalizado < 3 * Math.PI / 2) return 'Sigma';
+    return 'Pulsion';
+  }
+
+  /**
+   * Obtiene el color correspondiente a cada cinta
+   */
+  private getColorForCinta(cinta: 'S' | 'I' | 'Sigma' | 'Pulsion'): string {
+    switch (cinta) {
+      case 'S': return COLOR_PALETTE.S;
+      case 'I': return COLOR_PALETTE.I;
+      case 'Sigma': return COLOR_PALETTE.Sigma;
+      case 'Pulsion': return COLOR_PALETTE.Pulsion;
+      default: return COLOR_PALETTE.S;
+    }
+  }
+
+  /**
+   * Genera vectores de circulación para el trauma (S-E-I congelado)
+   * 
+   * METAPSICOLOGÍA:
+   * El trauma es un punto donde S, I, Σ están congelados por la Nachträglichkeit.
+   * Los VR en el trauma están bloqueados, pero pueden ser liberados.
+   * 
+   * @param numPuntos - Número de vectores alrededor del trauma
+   * @returns Trayectoria de vectores en el trauma
+   */
+  public generarVRTrauma(numPuntos: number = 50): VectorCirculacionTrayectoria {
+    const puntosVR: VectorCirculacion[] = [];
+    const u_T = this.model.u_T;
+    const v_T = this.model.v_T;
+    
+    for (let i = 0; i <= numPuntos; i++) {
+      const angulo = (i / numPuntos) * 2 * Math.PI;
+      
+      // Vectores circulares alrededor del punto del trauma
+      const u = u_T + 0.1 * Math.cos(angulo);
+      const v = v_T + 0.1 * Math.sin(angulo);
+      
+      // Calcular vector tangente
+      const vectorTangente = this.calcularVectorTangente(u, v);
+      
+      // En el trauma, los vectores tienen magnitud reducida (congelados)
+      const vectorFinal: [number, number, number] = [
+        vectorTangente[0] * 0.3, // Reducido: congelado
+        vectorTangente[1] * 0.3,
+        vectorTangente[2] * 0.3,
+      ];
+
+      const vector: VectorCirculacion = {
+        nombre: `VR-Trauma-${i}`,
+        cinta: 'Sigma', // El trauma está principalmente en Σ
+        posicion: [u, v],
+        direccion: vectorFinal,
+        magnitud: 0.3, // Magnitud reducida
+        sentido: 'clockwise',
+        color: COLOR_PALETTE.trauma,
+        esTangente: true,
+      };
+
+      puntosVR.push(vector);
+    }
+
+    const trayectoria: VectorCirculacionTrayectoria = {
+      nombre: 'VR-Trauma',
+      cinta: 'Sigma',
+      puntos: puntosVR,
+      color: COLOR_PALETTE.trauma,
+      velocidad: 0.1, // Velocidad reducida (congelado)
+    };
+
+    this.vectores.push(trayectoria);
+    
+    return trayectoria;
+  }
+
+  /**
+   * Genera vectores de circulación para la fantasía (punto sin circulación)
+   * 
+   * METAPSICOLOGÍA:
+   * La fantasía es un punto fijo donde NO hay circulación.
+   * Los VR en la fantasía son nulos o apuntan hacia el punto fantasma.
+   * 
+   * @param numPuntos - Número de vectores alrededor de la fantasía
+   * @returns Trayectoria de vectores en la fantasía
+   */
+  public generarVRFantasia(numPuntos: number = 30): VectorCirculacionTrayectoria {
+    const puntosVR: VectorCirculacion[] = [];
+    const u_F = this.model.u_F;
+    const v_F = this.model.v_F;
+    
+    for (let i = 0; i <= numPuntos; i++) {
+      const angulo = (i / numPuntos) * 2 * Math.PI;
+      
+      // Vectores que apuntan TODOS hacia el punto fantasma (sin circulación)
+      const u = u_F + 0.2 * Math.cos(angulo);
+      const v = v_F + 0.2 * Math.sin(angulo);
+      
+      // Vector que apunta hacia el punto fantasma
+      const dx = u_F - u;
+      const dy = v_F - v;
+      const dz = 0;
+      
+      const mag = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      
+      const vector: VectorCirculacion = {
+        nombre: `VR-Fantasia-${i}`,
+        cinta: 'Sigma', // La fantasía está en Σ
+        posicion: [u, v],
+        direccion: [dx / mag, dy / mag, dz / mag],
+        magnitud: 0.0, // Magnitud cero: NO hay circulación
+        sentido: 'clockwise',
+        color: COLOR_PALETTE.fant,
+        esTangente: false,
+      };
+
+      puntosVR.push(vector);
+    }
+
+    const trayectoria: VectorCirculacionTrayectoria = {
+      nombre: 'VR-Fantasia',
+      cinta: 'Sigma',
+      puntos: puntosVR,
+      color: COLOR_PALETTE.fant,
+      velocidad: 0.0, // Velocidad cero: NO hay circulación
+    };
+
+    this.vectores.push(trayectoria);
+    
+    return trayectoria;
+  }
+
+  /**
+   * Obtiene todas las trayectorias de vectores generadas
+   */
+  public getTrayectorias(): VectorCirculacionTrayectoria[] {
+    return [...this.vectores];
+  }
+
+  /**
+   * Limpia todas las trayectorias de vectores
+   */
+  public clearTrayectorias(): void {
+    this.vectores = [];
+  }
+
+  /**
+   * Obtiene los puntos 3D para visualizar una trayectoria de vectores
+   */
+  public getTrayectoria3D(trayectoria: VectorCirculacionTrayectoria): {
+    puntos: [number, number, number][];
+    vectores: [number, number, number][];
+  } {
+    const puntos: [number, number, number][] = [];
+    const vectores: [number, number, number][] = [];
+    
+    trayectoria.puntos.forEach((vector) => {
+      const [u, v] = vector.posicion;
+      const punto = this.model.punto(u, v);
+      puntos.push(punto);
+      
+      // El vector dirección ya está en coordenadas 3D
+      vectores.push(vector.direccion);
+    });
+    
+    return { puntos, vectores };
+  }
+}
 
 // =============================================================================
 // INTERFAZ PARA CIRCULACIÓN DE SIGNIFICANTE/SIGNIFICADO

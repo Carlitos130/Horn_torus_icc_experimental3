@@ -14,6 +14,7 @@ import { PsychometricSandbox } from "@/components/PsychometricSandbox";
 import { DocsReader } from "@/components/DocsReader";
 import { RetrocompatibilityTest } from "@/components/RetrocompatibilityTest";
 import { SignificanteCirculacionViewer } from "@/components/SignificanteCirculacionViewer";
+import { VectorCirculacionViewer } from "@/components/VectorCirculacionViewer";
 import {
   Orbit,
   Layers,
@@ -27,10 +28,11 @@ import {
   RotateCw,
   RotateCcw,
   ShieldCheck,
+  Wind,
 } from "lucide-react";
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<"visor" | "figuras" | "scl" | "docs" | "test" | "circulacion">("visor");
+  const [activeTab, setActiveTab] = useState<"visor" | "figuras" | "scl" | "docs" | "test" | "circulacion" | "vectores">("visor");
 
   // Model parameters
   const [rOverR, setROverR] = useState<number>(1.0);
@@ -151,11 +153,24 @@ export default function HomePage() {
               onClick={() => setActiveTab("circulacion")}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeTab === "circulacion"
+
+        {activeTab === "vectores" && <VectorCirculacionViewer model={model} />}
                   ? "bg-indigo-600 text-white shadow-sm font-semibold"
                   : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
+            <button
+              onClick={() => setActiveTab("vectores")}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === "vectores"
+                  ? "bg-indigo-600 text-white shadow-sm font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+              }`}
+            >
+              <Wind className="w-3.5 h-3.5" />
+              <span>Vectores VR (Cintas)</span>
+            </button>
               <span>Circulación S/s</span>
             </button>
           </nav>
@@ -366,6 +381,7 @@ export default function HomePage() {
         {activeTab === "test" && <RetrocompatibilityTest />}
 
         {activeTab === "circulacion" && <SignificanteCirculacionViewer model={model} />}
+
       </main>
 
       {/* Footer */}
