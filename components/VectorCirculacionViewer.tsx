@@ -36,7 +36,7 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
   const [trayectorias, setTrayectorias] = useState<VectorCirculacionTrayectoria[]>([]);
   const [isAnimating, setIsAnimating] = useState<boolean>(true);
   const [animationSpeed, setAnimationSpeed] = useState<number>(1.0);
-  const [arrowScale, setArrowScale] = useState<number>(1.0);
+  const [arrowScale, setArrowScale] = useState<number>(0.85);
   const [showVozVectors, setShowVozVectors] = useState<boolean>(true);
   const [showTraumaVectors, setShowTraumaVectors] = useState<boolean>(false);
   const [showFantasiaAnchor, setShowFantasiaAnchor] = useState<boolean>(true);
@@ -371,14 +371,14 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
               <input
                 id="range-vr-scale"
                 type="range"
-                min="0.5"
-                max="2.5"
-                step="0.1"
+                min="0.3"
+                max="1.8"
+                step="0.05"
                 value={arrowScale}
                 onChange={(e) => setArrowScale(parseFloat(e.target.value))}
                 className="w-24 accent-indigo-500 cursor-pointer"
               />
-              <span className="font-mono text-slate-400 w-9 text-right">{arrowScale.toFixed(1)}x</span>
+              <span className="font-mono text-slate-400 w-9 text-right">{arrowScale.toFixed(2)}x</span>
             </label>
           </div>
         </div>
@@ -472,10 +472,10 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
           </div>
 
           <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-900 border border-slate-800">
-            <span className="w-3 h-3 rounded-full border border-cyan-300 bg-cyan-900" />
+            <span className="w-3 h-3 rounded-full border border-cyan-300 bg-cyan-400 shadow-sm shadow-cyan-500/50" />
             <div>
               <div className="font-semibold text-cyan-200">Voz (0,0,0)</div>
-              <div className="text-[10px] text-slate-400">Emisión centrífuga</div>
+              <div className="text-[10px] text-slate-400">Emisión cian luminoso</div>
             </div>
           </div>
 
@@ -782,32 +782,33 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
     const torusMesh = new THREE.Mesh(torusGeo, torusMat);
     scene.add(torusMesh);
 
-    // 3. Origen de la Voz (0,0,0) - Garganta central
-    const voiceGeo = new THREE.SphereGeometry(0.85, 24, 24);
+    // 3. Origen de la Voz (0,0,0) - Garganta central en cian brillante luminoso (alto contraste)
+    const voiceGeo = new THREE.SphereGeometry(0.7, 24, 24);
     const voiceMat = new THREE.MeshStandardMaterial({
-      color: 0x020617,
-      emissive: 0x38bdf8,
-      emissiveIntensity: 1.3,
+      color: 0x00e5ff,
+      emissive: 0x00b4d8,
+      emissiveIntensity: 1.5,
       roughness: 0.1,
+      metalness: 0.2,
     });
     const voiceMesh = new THREE.Mesh(voiceGeo, voiceMat);
     voiceMesh.position.set(0, 0, 0);
     scene.add(voiceMesh);
 
     // Halo concéntrico de la voz
-    const voiceHaloGeo = new THREE.RingGeometry(0.9, 1.3, 32);
+    const voiceHaloGeo = new THREE.RingGeometry(0.75, 1.15, 32);
     const voiceHaloMat = new THREE.MeshBasicMaterial({
-      color: 0x38bdf8,
+      color: 0x00e5ff,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.55,
     });
     const voiceHaloMesh = new THREE.Mesh(voiceHaloGeo, voiceHaloMat);
     voiceHaloMesh.rotation.x = Math.PI / 2;
     scene.add(voiceHaloMesh);
 
-    // 4. Generar curvas de cintas desde el modelo
-    const section4 = model.getSection4Curves(280);
+    // 4. Generar curvas de cintas desde el modelo y representarlas con TubeGeometry (cintas anchas 3D)
+    const section4 = model.getSection4Curves(360);
     const ribbonCurves: Record<string, THREE.Vector3[]> = {
       S: section4.S.map(([x, y, z]) => new THREE.Vector3(x, z, -y)),
       I: section4.I.map(([x, y, z]) => new THREE.Vector3(x, z, -y)),
@@ -815,22 +816,27 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
       Pulsion: section4.Pulsion.map(([x, y, z]) => new THREE.Vector3(x, z, -y)),
     };
 
-    // Dibujar las líneas tubulares/trazas de las cintas
+    // Dibujar las cintas anchas con TubeGeometry volumétrico recorriendo toda la superficie
     Object.entries(ribbonCurves).forEach(([cintaKey, pts]) => {
-      const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+      const curve = new THREE.CatmullRomCurve3(pts, true);
+      const tubeGeo = new THREE.TubeGeometry(curve, 320, 0.32, 12, true);
       const colorHex = new THREE.Color(COLOR_PALETTE[cintaKey as keyof typeof COLOR_PALETTE] || "#ffffff").getHex();
-      const lineMat = new THREE.LineBasicMaterial({
+      const tubeMat = new THREE.MeshStandardMaterial({
         color: colorHex,
+        emissive: colorHex,
+        emissiveIntensity: 0.38,
+        roughness: 0.28,
+        metalness: 0.22,
         transparent: true,
-        opacity: 0.75,
+        opacity: 0.9,
       });
-      const lineMesh = new THREE.Line(lineGeo, lineMat);
-      scene.add(lineMesh);
+      const tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
+      scene.add(tubeMesh);
     });
 
     // 5. Trauma (nodo fijo en el nudo de corte)
     const traumaPos = new THREE.Vector3(section4.traumaPoint[0], section4.traumaPoint[2], -section4.traumaPoint[1]);
-    const traumaGeo = new THREE.IcosahedronGeometry(0.7, 0);
+    const traumaGeo = new THREE.IcosahedronGeometry(0.5, 0);
     const traumaMat = new THREE.MeshStandardMaterial({
       color: COLOR_PALETTE.trauma,
       emissive: COLOR_PALETTE.trauma,
@@ -841,13 +847,13 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
     traumaMesh.position.copy(traumaPos);
     scene.add(traumaMesh);
 
-    // 6. FANTASÍA: ANCLADA EN EL INCONSCIENTE (NO SALEN VECTORES)
+    // 6. FANTASÍA: ANCLADA EN EL INCONSCIENTE (MÁS CHICA EN EL ESPACIO, NO SALEN VECTORES)
     // Coordenadas en la cara interna del horn torus
     const fantasyPos = new THREE.Vector3(section4.fantasyPoint[0], section4.fantasyPoint[2], -section4.fantasyPoint[1]);
     fantasyGroup.position.copy(fantasyPos);
 
-    // A) Base del Ancla: Anillo de fijación en el inconsciente
-    const anchorRingGeo = new THREE.TorusGeometry(0.9, 0.14, 16, 32);
+    // A) Base del Ancla: Anillo de fijación en el inconsciente (tamaño compacto)
+    const anchorRingGeo = new THREE.TorusGeometry(0.32, 0.05, 16, 24);
     const anchorRingMat = new THREE.MeshStandardMaterial({
       color: 0xf59e0b, // Dorado
       emissive: 0xd97706,
@@ -859,8 +865,8 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
     anchorRingMesh.rotation.x = Math.PI / 2;
     fantasyGroup.add(anchorRingMesh);
 
-    // B) Diamante/Cristal Central ($ ◇ a)
-    const jewelGeo = new THREE.OctahedronGeometry(0.85, 0);
+    // B) Diamante/Cristal Central ($ ◇ a) (más chico)
+    const jewelGeo = new THREE.OctahedronGeometry(0.30, 0);
     const jewelMat = new THREE.MeshStandardMaterial({
       color: COLOR_PALETTE.fant,
       emissive: COLOR_PALETTE.fant,
@@ -871,8 +877,8 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
     const jewelMesh = new THREE.Mesh(jewelGeo, jewelMat);
     fantasyGroup.add(jewelMesh);
 
-    // C) Barra transversal del ancla estructural
-    const crossBarGeo = new THREE.CylinderGeometry(0.08, 0.08, 1.6, 12);
+    // C) Barra transversal del ancla estructural (más chica)
+    const crossBarGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.55, 10);
     const crossBarMat = new THREE.MeshStandardMaterial({
       color: 0xfbbf24,
       emissive: 0xb45309,
@@ -884,12 +890,12 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
     crossBarMesh.rotation.z = Math.PI / 2;
     fantasyGroup.add(crossBarMesh);
 
-    // D) Halo aura del inconsciente (pulsación sin emitir vectores)
-    const fantasyAuraGeo = new THREE.SphereGeometry(1.25, 20, 20);
+    // D) Halo aura del inconsciente (pulsación sin emitir vectores, más chico)
+    const fantasyAuraGeo = new THREE.SphereGeometry(0.48, 16, 16);
     const fantasyAuraMat = new THREE.MeshBasicMaterial({
       color: 0xa855f7,
       transparent: true,
-      opacity: 0.2,
+      opacity: 0.25,
       wireframe: true,
     });
     const fantasyAuraMesh = new THREE.Mesh(fantasyAuraGeo, fantasyAuraMat);
@@ -919,10 +925,10 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
             const arrow = new THREE.ArrowHelper(
               new THREE.Vector3(dirX, 0.2, dirZ).normalize(),
               new THREE.Vector3(0, 0, 0),
-              2.0,
+              0.95,
               color,
-              0.6,
-              0.3
+              0.26,
+              0.14
             );
 
             const baseOffset = a / arrowsPerRay;
@@ -934,7 +940,7 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
 
               arrow.position.set(dirX * dist, yDisp, dirZ * dist);
               arrow.setDirection(new THREE.Vector3(dirX, 0.15, dirZ).normalize());
-              arrow.setLength(2.0 * scale, 0.6 * scale, 0.3 * scale);
+              arrow.setLength(0.95 * scale, 0.26 * scale, 0.14 * scale);
             };
 
             animatedGroup.add(arrow);
@@ -953,21 +959,21 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
           const arrow = new THREE.ArrowHelper(
             new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle)),
             traumaPos.clone(),
-            1.2,
+            0.75,
             color,
-            0.4,
-            0.2
+            0.22,
+            0.12
           );
 
           (arrow as any).__updateVector = (time: number, scale: number) => {
             // Oscilación bloqueada/congelada en el trauma (S-E-I)
             const wiggle = 0.22 * Math.sin(time * 2.8 + i);
-            const radius = 1.0 + wiggle;
+            const radius = 0.8 + wiggle;
             const curAngle = angle + 0.15 * Math.sin(time * 1.5 + i);
 
             arrow.position.set(
               traumaPos.x + radius * Math.cos(curAngle),
-              traumaPos.y + 0.3 * Math.cos(time * 3 + i),
+              traumaPos.y + 0.2 * Math.cos(time * 3 + i),
               traumaPos.z + radius * Math.sin(curAngle)
             );
 
@@ -979,7 +985,7 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
             ).normalize();
 
             arrow.setDirection(dir);
-            arrow.setLength(1.4 * scale, 0.45 * scale, 0.25 * scale);
+            arrow.setLength(0.75 * scale, 0.22 * scale, 0.12 * scale);
           };
 
           animatedGroup.add(arrow);
@@ -1007,10 +1013,10 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
         const arrow = new THREE.ArrowHelper(
           initialDir,
           initialPos,
-          2.3,
+          1.05,
           color,
-          0.7,
-          0.35
+          0.30,
+          0.16
         );
 
         (arrow as any).__updateVector = (time: number, scale: number) => {
@@ -1022,7 +1028,7 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
 
           arrow.position.copy(pos);
           arrow.setDirection(tangent);
-          arrow.setLength(2.3 * scale, 0.7 * scale, 0.35 * scale);
+          arrow.setLength(1.05 * scale, 0.30 * scale, 0.16 * scale);
         };
 
         animatedGroup.add(arrow);

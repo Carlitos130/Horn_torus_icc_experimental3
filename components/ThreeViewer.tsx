@@ -321,39 +321,44 @@ export const ThreeViewer: React.FC<ThreeViewerProps> = ({
         name: string,
         badge: string,
         description: string,
-        lineWidth: number = 3
+        tubeRadius: number = 0.22
       ) => {
         const linePoints = pts.map(([x, y, z]) => new THREE.Vector3(x, z, -y));
-        const lineGeo = new THREE.BufferGeometry().setFromPoints(linePoints);
-        const lineMat = new THREE.LineBasicMaterial({
+        const curve = new THREE.CatmullRomCurve3(linePoints, true);
+        const tubeGeo = new THREE.TubeGeometry(curve, 260, tubeRadius, 10, true);
+        const tubeMat = new THREE.MeshStandardMaterial({
           color: new THREE.Color(colorHex),
-          linewidth: lineWidth,
-          depthTest: true,
+          emissive: new THREE.Color(colorHex),
+          emissiveIntensity: 0.35,
+          roughness: 0.28,
+          metalness: 0.2,
+          transparent: true,
+          opacity: 0.88,
         });
-        const line = new THREE.Line(lineGeo, lineMat);
-        line.userData = {
+        const mesh = new THREE.Mesh(tubeGeo, tubeMat);
+        mesh.userData = {
           type: "curve",
           title: name,
           badge,
           color: colorHex,
           details: description,
         };
-        meshGroup.add(line);
+        meshGroup.add(mesh);
       };
 
       if (curveStyle === "section4") {
         const s4 = model.getSection4Curves(360);
-        addCurveLine(s4.S, COLOR_PALETTE.S, "Curva S (Significante)", "Lazo Simbólico", "Cadena significante en el toroide", 4);
-        addCurveLine(s4.I, COLOR_PALETTE.I, "Curva I (Imagen)", "Lazo Imaginario", "Bucle especular del registro imaginario", 4);
-        addCurveLine(s4.Pulsion, COLOR_PALETTE.Pulsion, "Hilo Pulsional (Toroide Interior)", "Pulsión", "Trayectoria helicoidal pulsional circundante", 3);
-        addCurveLine(s4.Sigma, COLOR_PALETTE.Sigma, "Curva Σ (Síntoma / Sinthome)", "Anudamiento", "Sinthome estabilizador de la estructura RSI", 4);
-        addCurveLine(s4.lambdaInt, COLOR_PALETTE.voz, "Círculo Interior (Voz)", "Auto-tangencia", "Círculo central de contacto y auto-tangencia", 5);
+        addCurveLine(s4.S, COLOR_PALETTE.S, "Curva S (Significante)", "Lazo Simbólico", "Cadena significante en el toroide", 0.26);
+        addCurveLine(s4.I, COLOR_PALETTE.I, "Curva I (Imagen)", "Lazo Imaginario", "Bucle especular del registro imaginario", 0.26);
+        addCurveLine(s4.Pulsion, COLOR_PALETTE.Pulsion, "Hilo Pulsional (Toroide Interior)", "Pulsión", "Trayectoria helicoidal pulsional circundante", 0.22);
+        addCurveLine(s4.Sigma, COLOR_PALETTE.Sigma, "Curva Σ (Síntoma / Sinthome)", "Anudamiento", "Sinthome estabilizador de la estructura RSI", 0.26);
+        addCurveLine(s4.lambdaInt, COLOR_PALETTE.voz, "Círculo Interior (Voz)", "Auto-tangencia", "Círculo central de contacto y auto-tangencia", 0.28);
       } else {
         const mc = model.getMotorCurves(360);
-        addCurveLine(mc.S, COLOR_PALETTE.S, "Curva Motor S (Significante)", "Dinámica", "Flujo motor de la cadena significante", 4);
-        addCurveLine(mc.I, COLOR_PALETTE.I, "Curva Motor I (Imagen)", "Dinámica", "Flujo motor del registro imaginario", 4);
-        addCurveLine(mc.Pulsion, COLOR_PALETTE.Pulsion, "Hilo Pulsional Motor", "Dinámica", "Circulación pulsional dinámica", 3);
-        addCurveLine(mc.Sigma, COLOR_PALETTE.Sigma, "Curva Motor Σ (Síntoma)", "Dinámica", "Dinámica sintomática de estabilización", 4);
+        addCurveLine(mc.S, COLOR_PALETTE.S, "Curva Motor S (Significante)", "Dinámica", "Flujo motor de la cadena significante", 0.26);
+        addCurveLine(mc.I, COLOR_PALETTE.I, "Curva Motor I (Imagen)", "Dinámica", "Flujo motor del registro imaginario", 0.26);
+        addCurveLine(mc.Pulsion, COLOR_PALETTE.Pulsion, "Hilo Pulsional Motor", "Dinámica", "Circulación pulsional dinámica", 0.22);
+        addCurveLine(mc.Sigma, COLOR_PALETTE.Sigma, "Curva Motor Σ (Síntoma)", "Dinámica", "Dinámica sintomática de estabilización", 0.26);
       }
     }
 
@@ -361,8 +366,8 @@ export const ThreeViewer: React.FC<ThreeViewerProps> = ({
     if (showMarkers) {
       const s4 = model.getSection4Curves(60);
 
-      // Fantasy Point (Cube / square)
-      const fantGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+      // Fantasy Point (Cube / square) — tamaño más chico en el espacio
+      const fantGeo = new THREE.BoxGeometry(0.35, 0.35, 0.35);
       const fantMat = new THREE.MeshStandardMaterial({
         color: COLOR_PALETTE.fant,
         emissive: 0xd81b8c,
@@ -381,8 +386,8 @@ export const ThreeViewer: React.FC<ThreeViewerProps> = ({
       };
       meshGroup.add(fantMesh);
 
-      // Trauma Point (Octahedron / diamond)
-      const traumaGeo = new THREE.OctahedronGeometry(0.7);
+      // Trauma Point (Octahedron / diamond) — tamaño compacto
+      const traumaGeo = new THREE.OctahedronGeometry(0.38);
       const traumaMat = new THREE.MeshStandardMaterial({
         color: COLOR_PALETTE.trauma,
         emissive: 0xef6c00,

@@ -172,14 +172,6 @@ export default function HomePage() {
               <Wind className="w-3.5 h-3.5" />
               <span>Vectores VR (Cintas)</span>
             </button>
-            <Link
-              href="/blog"
-              id="nav-link-blog"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-indigo-700/60 bg-indigo-950/40 text-indigo-300 hover:bg-indigo-900/60 hover:text-indigo-200 transition-all ml-auto"
-            >
-              <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Blog (ISR)</span>
-            </Link>
           </nav>
         </div>
       </header>

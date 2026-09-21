@@ -123,7 +123,7 @@ export const COLOR_PALETTE = {
   I: "#2e8b57", // seagreen — I (Imagen del cuerpo)
   Pulsion: "#daa520", // goldenrod — Hilo pulsional (Trieb)
   Sigma: "#3f51b5", // royalblue — Σ (Síntoma)
-  voz: "#111111", // punto de autotangencia / la voz
+  voz: "#00e5ff", // cian brillante luminoso — punto de autotangencia / la voz (alto contraste en fondo azul oscuro)
   trauma: "#ef6c00", // núcleo del trauma
   fant: "#d81b8c", // núcleo fantasmático
   ding: "#37474f", // superficie de Ding
@@ -255,25 +255,23 @@ export class VectorCirculacionGenerator {
     for (let i = 0; i <= numPuntos; i++) {
       const u = (i / numPuntos) * 2 * Math.PI;
       
-      // Obtener v según la cinta
+      // Obtener v según la cinta recorriendo toda la superficie del horn torus
       let v: number;
       switch (cinta) {
         case 'S':
-          v = this.model.v_S + 0.48 * Math.cos(u + this.model.v_S) - 0.16 * Math.sin(2 * u);
+          v = u + this.model.v_S;
           break;
         case 'I':
-          v = Math.PI + 0.48 * Math.sin(u + this.model.v_I) + 0.12 * Math.cos(2 * u);
+          v = -u + this.model.v_I;
           break;
         case 'Sigma':
-          v = Math.PI + 0.58 * Math.sin(2 * u + this.model.v_Sigma);
+          v = 2.0 * u + this.model.v_Sigma;
           break;
         case 'Pulsion':
-          // Para la pulsión, usamos la curva I con desplazamiento
-          const v_I = Math.PI + 0.48 * Math.sin(u + this.model.v_I) + 0.12 * Math.cos(2 * u);
-          v = v_I + 0.14 * Math.sin(6 * u) * this.model.pulsion_attachment_strength;
+          v = u + this.model.v_I + 0.35 + 0.15 * Math.sin(3.0 * u) * this.model.pulsion_attachment_strength;
           break;
         default:
-          v = Math.PI + 0.5 * Math.sin(u);
+          v = u;
       }
 
       // Calcular vector tangente
@@ -1241,23 +1239,15 @@ export class HornTorusFamiliaModel {
       uVals.push((i / points) * 2 * Math.PI);
     }
 
-    // Banda de inscripción en la cara interna del toro
-    // [0.45, 2.70] rad = [25.8°, 154.7°] en coordenadas de latitud
-    // Esta banda evita la línea v = π (180°) donde está la voz
-    const bandaMin = 0.45;
-    const bandaMax = 2.70;
-    const v0 = 0.5 * (bandaMin + bandaMax);  // Centro de la banda
-    const ampl = 0.5 * (bandaMax - bandaMin);   // Amplitud de oscilación
-
     // Fases de las curvas (desplazamientos en u)
     // Estas fases determinan la posición relativa de las cintas
     const phi_S = this.v_S % (2 * Math.PI);
     const phi_I = this.v_I % (2 * Math.PI);
     const phi_Sigma = this.v_Sigma % (2 * Math.PI);
 
-    // Radio reducido para las curvas (93% del radio del tubo)
-    // Esto hace que las curvas estén ligeramente por dentro de la superficie
-    const rho = 0.93 * this.r;
+    // Radio ligeramente sobreelevado para las cintas (101.5% del radio del tubo)
+    // para que recorran la superficie exterior e interior sin quedar ocluidas
+    const rho = 1.015 * this.r;
 
     const sCurve: [number, number, number][] = [];
     const iCurve: [number, number, number][] = [];
@@ -1266,17 +1256,14 @@ export class HornTorusFamiliaModel {
     const lambdaIntCurve: [number, number, number][] = [];
 
     for (const u of uVals) {
-      // Curvas oscilando en la banda [0.45, 2.70] con frecuencia 3
-      // Las fases están desfasadas por 2π/3 para crear la trenza
-      const v_s = v0 + ampl * Math.sin(3.0 * u + phi_S);
-      const v_i = v0 + ampl * Math.sin(3.0 * u + phi_I + (2 * Math.PI) / 3);
-      const v_sg = v0 + ampl * Math.sin(3.0 * u + phi_Sigma + (4 * Math.PI) / 3);
-      
-      // Curva de pulsión: ligeramente desplazada de la curva I
-      // El desplazamiento depende de la fuerza de apego de la pulsión
-      const v_p = v_i + 0.075 + 0.055 * this.pulsion_attachment_strength;
+      // Las cintas recorren toda la superficie del horn torus (cubriendo latitud v en [0, 2π])
+      // Pasando por la cara exterior (v=0), polo superior (v=π/2), garganta interior (v=π) y vientre inferior (v=3π/2)
+      const v_s = u + phi_S;
+      const v_i = -u + phi_I;
+      const v_sg = 2.0 * u + phi_Sigma;
+      const v_p = u + phi_I + 0.35 + 0.15 * Math.sin(3.0 * u) * this.pulsion_attachment_strength;
 
-      // Generar puntos en las curvas con radio reducido rho
+      // Generar puntos en las curvas recorriendo toda la superficie del horn torus
       sCurve.push(this.punto(u, v_s, rho));
       iCurve.push(this.punto(u, v_i, rho));
       pCurve.push(this.punto(u, v_p, rho));
