@@ -36,7 +36,7 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
   const [trayectorias, setTrayectorias] = useState<VectorCirculacionTrayectoria[]>([]);
   const [isAnimating, setIsAnimating] = useState<boolean>(true);
   const [animationSpeed, setAnimationSpeed] = useState<number>(1.0);
-  const [arrowScale, setArrowScale] = useState<number>(0.85);
+  const [arrowScale, setArrowScale] = useState<number>(0.65);
   const [showVozVectors, setShowVozVectors] = useState<boolean>(true);
   const [showTraumaVectors, setShowTraumaVectors] = useState<boolean>(false);
   const [showFantasiaAnchor, setShowFantasiaAnchor] = useState<boolean>(true);
@@ -367,12 +367,12 @@ export const VectorCirculacionViewer: React.FC<VectorCirculacionViewerProps> = (
           
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-2 text-xs text-slate-300 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800">
-              <span>Tamaño de Flechas:</span>
+              <span>Tamaño de Vectores (Reducido):</span>
               <input
                 id="range-vr-scale"
                 type="range"
-                min="0.3"
-                max="1.8"
+                min="0.25"
+                max="1.4"
                 step="0.05"
                 value={arrowScale}
                 onChange={(e) => setArrowScale(parseFloat(e.target.value))}
@@ -670,16 +670,93 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
     };
   }, []);
 
-  // Función auxiliar para muestrear un punto en una curva cerrada en fase [0, 1)
-  const sampleClosedCurve = (points: THREE.Vector3[], tNorm: number): THREE.Vector3 => {
-    const len = points.length;
-    if (len === 0) return new THREE.Vector3();
-    const wrapped = ((tNorm % 1) + 1) % 1;
-    const floatIdx = wrapped * (len - 1);
-    const i0 = Math.floor(floatIdx);
-    const i1 = (i0 + 1) % len;
-    const frac = floatIdx - i0;
-    return new THREE.Vector3().lerpVectors(points[i0], points[i1], frac);
+  // Vector unitario hacia arriba para alineación de cuaterniones
+  const UP = useMemo(() => new THREE.Vector3(0, 1, 0), []);
+
+  // Construcción de micro-vectores volumétricos aerodinámicos de tamaño reducido
+  const createMicroVector = (colorHex: string | number) => {
+    const group = new THREE.Group();
+    const color = new THREE.Color(colorHex);
+
+    const mat = new THREE.MeshStandardMaterial({
+      color: color,
+      emissive: color,
+      emissiveIntensity: 1.45,
+      roughness: 0.22,
+      metalness: 0.35,
+    });
+
+    // Cono de punta aerodinámica (reducido y nítido)
+    const coneGeo = new THREE.ConeGeometry(0.10, 0.22, 12);
+    const coneMesh = new THREE.Mesh(coneGeo, mat);
+    coneMesh.position.y = 0.11;
+    group.add(coneMesh);
+
+    // Vástago cilíndrico delgado
+    const cylGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.16, 8);
+    const cylMesh = new THREE.Mesh(cylGeo, mat);
+    cylMesh.position.y = -0.06;
+    group.add(cylMesh);
+
+    // Perla luminosa de cola
+    const sphereGeo = new THREE.SphereGeometry(0.045, 8, 8);
+    const sphereMesh = new THREE.Mesh(sphereGeo, mat);
+    sphereMesh.position.y = -0.15;
+    group.add(sphereMesh);
+
+    (group as any).dispose = () => {
+      coneGeo.dispose();
+      cylGeo.dispose();
+      sphereGeo.dispose();
+      mat.dispose();
+    };
+
+    return group;
+  };
+
+  // Cálculo analítico continuo de posición y vector tangente sobre las cintas del Horn Torus
+  const getRibbonPointAndTangent = (
+    cinta: 'S' | 'I' | 'Sigma' | 'Pulsion',
+    u: number,
+    modelObj: HornTorusFamiliaModel,
+    tubeRad: number = 0.22,
+    elevation: number = 0.06
+  ) => {
+    const phi_S = modelObj.v_S % (2 * Math.PI);
+    const phi_I = modelObj.v_I % (2 * Math.PI);
+    const phi_Sigma = modelObj.v_Sigma % (2 * Math.PI);
+    const s = modelObj.pulsion_attachment_strength;
+
+    const computeV = (angU: number): number => {
+      switch (cinta) {
+        case 'S':
+          return angU + phi_S;
+        case 'I':
+          return -angU + phi_I;
+        case 'Sigma':
+          return 2.0 * angU + phi_Sigma;
+        case 'Pulsion':
+          return angU + phi_I + 0.35 + 0.15 * Math.sin(3.0 * angU) * s;
+        default:
+          return angU;
+      }
+    };
+
+    const rho = 1.015 * modelObj.r + tubeRad + elevation;
+    const v0 = computeV(u);
+    const [x0, y0, z0] = modelObj.punto(u, v0, rho);
+
+    // Pequeño paso du para vector tangente exacto sin saltos numéricos
+    const du = 0.003;
+    const u1 = u + du;
+    const v1 = computeV(u1);
+    const [x1, y1, z1] = modelObj.punto(u1, v1, rho);
+
+    const pos = new THREE.Vector3(x0, z0, -y0);
+    const ahead = new THREE.Vector3(x1, z1, -y1);
+    const tangent = ahead.sub(pos).normalize();
+
+    return { position: pos, tangent };
   };
 
   // Reconstruir la geometría estática del toro, cintas, ancla de fantasía y registrar vectores dinámicos
@@ -734,8 +811,8 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
 
     // 2. Toro transparente (superficie del horn torus)
     const uSegments = 70;
-    const vSegments = 35;
-    const vMax = Math.PI;
+    const vSegments = 40;
+    const vMax = 2 * Math.PI;
     const positions: number[] = [];
     const normals: number[] = [];
 
@@ -771,13 +848,13 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
     torusGeo.setIndex(indices);
 
     const torusMat = new THREE.MeshStandardMaterial({
-      color: 0x334155,
+      color: 0x1e293b,
       side: THREE.DoubleSide,
-      roughness: 0.35,
-      metalness: 0.15,
+      roughness: 0.38,
+      metalness: 0.12,
       transparent: true,
-      opacity: 0.22,
-      depthWrite: true,
+      opacity: 0.18,
+      depthWrite: false,
     });
     const torusMesh = new THREE.Mesh(torusGeo, torusMat);
     scene.add(torusMesh);
@@ -816,19 +893,22 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
       Pulsion: section4.Pulsion.map(([x, y, z]) => new THREE.Vector3(x, z, -y)),
     };
 
-    // Dibujar las cintas anchas con TubeGeometry volumétrico recorriendo toda la superficie
+    // Radio de la cinta tubular
+    const ribbonTubeRadius = 0.22;
+
+    // Dibujar las cintas con TubeGeometry volumétrico recorriendo toda la superficie
     Object.entries(ribbonCurves).forEach(([cintaKey, pts]) => {
       const curve = new THREE.CatmullRomCurve3(pts, true);
-      const tubeGeo = new THREE.TubeGeometry(curve, 320, 0.32, 12, true);
+      const tubeGeo = new THREE.TubeGeometry(curve, 320, ribbonTubeRadius, 12, true);
       const colorHex = new THREE.Color(COLOR_PALETTE[cintaKey as keyof typeof COLOR_PALETTE] || "#ffffff").getHex();
       const tubeMat = new THREE.MeshStandardMaterial({
         color: colorHex,
         emissive: colorHex,
-        emissiveIntensity: 0.38,
+        emissiveIntensity: 0.42,
         roughness: 0.28,
         metalness: 0.22,
         transparent: true,
-        opacity: 0.9,
+        opacity: 0.92,
       });
       const tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
       scene.add(tubeMesh);
@@ -901,7 +981,7 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
     const fantasyAuraMesh = new THREE.Mesh(fantasyAuraGeo, fantasyAuraMat);
     fantasyGroup.add(fantasyAuraMesh);
 
-    // 7. CREAR VECTORES EN MOVIMIENTO DINÁMICO PARA CADA TRAYECTORIA ACTIVA
+    // 7. CREAR MICRO-VECTORES EN MOVIMIENTO FLUIDO PARA CADA TRAYECTORIA ACTIVA
     // Nota: La fantasía NO emite vectores ("no salen vectores esta anclado en el inconsciente")
     trayectorias.forEach((trayectoria) => {
       // Si es la fantasía, NO generar flechas (es un punto fijo anclado)
@@ -912,38 +992,32 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
       // CASO A: Vectores desde la Voz (emisión continua centrífuga desde (0,0,0))
       if (trayectoria.nombre === "VR-Voz" && showVozVectors) {
         const numRays = 8;
-        const arrowsPerRay = 2;
-        const color = new THREE.Color(COLOR_PALETTE.voz);
+        const arrowsPerRay = 3;
+        const color = COLOR_PALETTE.voz;
 
         for (let r = 0; r < numRays; r++) {
           const angle = (r / numRays) * Math.PI * 2;
           const dirX = Math.cos(angle);
           const dirZ = Math.sin(angle);
-          const maxDistance = model.r * 1.5;
+          const maxDistance = model.r * 1.4;
 
           for (let a = 0; a < arrowsPerRay; a++) {
-            const arrow = new THREE.ArrowHelper(
-              new THREE.Vector3(dirX, 0.2, dirZ).normalize(),
-              new THREE.Vector3(0, 0, 0),
-              0.95,
-              color,
-              0.26,
-              0.14
-            );
-
+            const microVector = createMicroVector(color);
             const baseOffset = a / arrowsPerRay;
-            (arrow as any).__updateVector = (time: number, scale: number) => {
-              // Movimiento continuo desde el centro hacia afuera
-              const progress = ((baseOffset + time * 0.25) % 1);
-              const dist = progress * maxDistance;
-              const yDisp = 0.8 * Math.sin(progress * Math.PI);
 
-              arrow.position.set(dirX * dist, yDisp, dirZ * dist);
-              arrow.setDirection(new THREE.Vector3(dirX, 0.15, dirZ).normalize());
-              arrow.setLength(0.95 * scale, 0.26 * scale, 0.14 * scale);
+            (microVector as any).__updateVector = (time: number, scale: number) => {
+              // Movimiento continuo desde el centro hacia afuera
+              const progress = ((baseOffset + time * 0.22) % 1);
+              const dist = progress * maxDistance;
+              const yDisp = 0.7 * Math.sin(progress * Math.PI);
+
+              microVector.position.set(dirX * dist, yDisp, dirZ * dist);
+              const dir = new THREE.Vector3(dirX, 0.25 * Math.cos(progress * Math.PI), dirZ).normalize();
+              microVector.quaternion.setFromUnitVectors(UP, dir);
+              microVector.scale.set(scale * 0.85, scale * 0.85, scale * 0.85);
             };
 
-            animatedGroup.add(arrow);
+            animatedGroup.add(microVector);
           }
         }
         return;
@@ -952,90 +1026,82 @@ const VectorCirculacionCanvas: React.FC<VectorCirculacionCanvasProps> = ({
       // CASO B: Vectores del Trauma (oscilación congelada sin circulación libre)
       if (trayectoria.nombre === "VR-Trauma" && showTraumaVectors) {
         const numTraumaArrows = 8;
-        const color = new THREE.Color(COLOR_PALETTE.trauma);
+        const color = COLOR_PALETTE.trauma;
 
         for (let i = 0; i < numTraumaArrows; i++) {
           const angle = (i / numTraumaArrows) * Math.PI * 2;
-          const arrow = new THREE.ArrowHelper(
-            new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle)),
-            traumaPos.clone(),
-            0.75,
-            color,
-            0.22,
-            0.12
-          );
+          const microVector = createMicroVector(color);
 
-          (arrow as any).__updateVector = (time: number, scale: number) => {
+          (microVector as any).__updateVector = (time: number, scale: number) => {
             // Oscilación bloqueada/congelada en el trauma (S-E-I)
-            const wiggle = 0.22 * Math.sin(time * 2.8 + i);
-            const radius = 0.8 + wiggle;
-            const curAngle = angle + 0.15 * Math.sin(time * 1.5 + i);
+            const wiggle = 0.18 * Math.sin(time * 2.8 + i);
+            const radius = 0.72 + wiggle;
+            const curAngle = angle + 0.14 * Math.sin(time * 1.5 + i);
 
-            arrow.position.set(
+            microVector.position.set(
               traumaPos.x + radius * Math.cos(curAngle),
-              traumaPos.y + 0.2 * Math.cos(time * 3 + i),
+              traumaPos.y + 0.16 * Math.cos(time * 3 + i),
               traumaPos.z + radius * Math.sin(curAngle)
             );
 
             // Vector apuntando hacia el nudo o tangencialmente bloqueado
             const dir = new THREE.Vector3(
-              -Math.sin(curAngle) * 0.6 - Math.cos(curAngle) * 0.4,
-              0.2 * Math.sin(time * 2),
-              Math.cos(curAngle) * 0.6 - Math.sin(curAngle) * 0.4
+              -Math.sin(curAngle) * 0.65 - Math.cos(curAngle) * 0.35,
+              0.22 * Math.sin(time * 2),
+              Math.cos(curAngle) * 0.65 - Math.sin(curAngle) * 0.35
             ).normalize();
 
-            arrow.setDirection(dir);
-            arrow.setLength(0.75 * scale, 0.22 * scale, 0.12 * scale);
+            microVector.quaternion.setFromUnitVectors(UP, dir);
+            microVector.scale.set(scale * 0.75, scale * 0.75, scale * 0.75);
           };
 
-          animatedGroup.add(arrow);
+          animatedGroup.add(microVector);
         }
         return;
       }
 
-      // CASO C: Vectores tangentes desplazándose por las Cintas (S, I, Sigma, Pulsion)
-      const cintaKey = trayectoria.cinta;
-      const pts = ribbonCurves[cintaKey];
-      if (!pts || pts.length === 0) return;
+      // CASO C: Micro-Vectores tangentes desplazándose fluidamente por las Cintas (S, I, Sigma, Pulsion)
+      const cintaKey = trayectoria.cinta as 'S' | 'I' | 'Sigma' | 'Pulsion';
+      if (!cintaKey) return;
 
-      const numArrows = 14; // Flechas que circulan uniformemente espaciadas por la cinta
-      const color = new THREE.Color(trayectoria.color);
-      const isClockwise = cintaKey === 'S' || cintaKey === 'Sigma';
-      const dirMultiplier = isClockwise ? 1 : -1;
-      const speedFactor = trayectoria.velocidad || 0.6;
+      const numArrows = 14; // Micro-vectores uniformemente espaciados por la cinta
+      const colorHex = trayectoria.color || COLOR_PALETTE[cintaKey];
+      const isClockwise = cintaKey === 'S' || cintaKey === 'Sigma' || cintaKey === 'Pulsion';
+      const dirMultiplier = cintaKey === 'I' ? -1 : 1;
+      const speedFactor = trayectoria.velocidad || 0.65;
 
       for (let k = 0; k < numArrows; k++) {
         const basePhase = k / numArrows;
-        const initialPos = sampleClosedCurve(pts, basePhase);
-        const nextPos = sampleClosedCurve(pts, (basePhase + 0.005 * dirMultiplier + 1) % 1);
-        const initialDir = nextPos.clone().sub(initialPos).normalize();
+        const microVector = createMicroVector(colorHex);
 
-        const arrow = new THREE.ArrowHelper(
-          initialDir,
-          initialPos,
-          1.05,
-          color,
-          0.30,
-          0.16
-        );
-
-        (arrow as any).__updateVector = (time: number, scale: number) => {
+        (microVector as any).__updateVector = (time: number, scale: number) => {
           // Desplazamiento continuo en la dirección de la cinta
           const currentPhase = ((basePhase + dirMultiplier * time * 0.08 * speedFactor) % 1 + 1) % 1;
-          const pos = sampleClosedCurve(pts, currentPhase);
-          const ahead = sampleClosedCurve(pts, (currentPhase + 0.006 * dirMultiplier + 1) % 1);
-          const tangent = ahead.clone().sub(pos).normalize();
+          const u = currentPhase * 2 * Math.PI;
 
-          arrow.position.copy(pos);
-          arrow.setDirection(tangent);
-          arrow.setLength(1.05 * scale, 0.30 * scale, 0.16 * scale);
+          // Cálculo analítico directo de la posición y la tangente sobre la superficie
+          const { position, tangent } = getRibbonPointAndTangent(
+            cintaKey,
+            u,
+            model,
+            ribbonTubeRadius,
+            0.06
+          );
+
+          if (dirMultiplier < 0) {
+            tangent.multiplyScalar(-1);
+          }
+
+          microVector.position.copy(position);
+          microVector.quaternion.setFromUnitVectors(UP, tangent);
+          microVector.scale.set(scale, scale, scale);
         };
 
-        animatedGroup.add(arrow);
+        animatedGroup.add(microVector);
       }
     });
 
-  }, [model, trayectorias, showVozVectors, showTraumaVectors, showFantasiaAnchor]);
+  }, [model, trayectorias, showVozVectors, showTraumaVectors, showFantasiaAnchor, UP]);
 
   return <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing" />;
 };

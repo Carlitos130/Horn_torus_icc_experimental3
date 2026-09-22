@@ -53,6 +53,7 @@ export const ThreeViewer: React.FC<ThreeViewerProps> = ({
   const controlsRef = useRef<OrbitControls | null>(null);
   const animFrameIdRef = useRef<number | null>(null);
   const meshGroupRef = useRef<THREE.Group | null>(null);
+  const animatedRibbonsGroupRef = useRef<THREE.Group | null>(null);
   const hoverReticleRef = useRef<THREE.Group | null>(null);
 
   // Tooltip & Inspection state
@@ -148,9 +149,24 @@ export const ThreeViewer: React.FC<ThreeViewerProps> = ({
     scene.add(hoverGroup);
     hoverReticleRef.current = hoverGroup;
 
-    // Render loop
-    const animate = () => {
+    // Grupo para micro-vectores de circulación fluida sobre las cintas
+    const animatedRibbonsGroup = new THREE.Group();
+    scene.add(animatedRibbonsGroup);
+    animatedRibbonsGroupRef.current = animatedRibbonsGroup;
+
+    let lastTime = performance.now();
+    let accumulatedTime = 0;
+
+    // Render loop con animación continua
+    const animate = (currentTime: number) => {
       animFrameIdRef.current = requestAnimationFrame(animate);
+
+      const dt = (currentTime - lastTime) * 0.001;
+      lastTime = currentTime;
+      if (dt < 0.2) {
+        accumulatedTime += dt;
+      }
+
       controls.update();
 
       // Make outer ring look at camera
@@ -158,9 +174,20 @@ export const ThreeViewer: React.FC<ThreeViewerProps> = ({
         outerRing.lookAt(camera.position);
       }
 
+      // Actualizar micro-vectores que circulan fluidamente por las cintas
+      if (animatedRibbonsGroupRef.current) {
+        animatedRibbonsGroupRef.current.children.forEach((child) => {
+          const updateFn = (child as any).__updateVector;
+          if (typeof updateFn === 'function') {
+            updateFn(accumulatedTime);
+          }
+        });
+      }
+
       renderer.render(scene, camera);
     };
-    animate();
+    lastTime = performance.now();
+    animFrameIdRef.current = requestAnimationFrame(animate);
 
     // Resize observer
     const resizeObserver = new ResizeObserver((entries) => {
@@ -212,6 +239,16 @@ export const ThreeViewer: React.FC<ThreeViewerProps> = ({
       } else if (child instanceof THREE.Line) {
         child.geometry.dispose();
         child.material.dispose();
+      }
+    }
+
+    // Limpiar micro-vectores de cintas previos
+    const animatedRibbonsGroup = animatedRibbonsGroupRef.current;
+    if (animatedRibbonsGroup) {
+      while (animatedRibbonsGroup.children.length > 0) {
+        const child = animatedRibbonsGroup.children[0];
+        animatedRibbonsGroup.remove(child);
+        if ((child as any).dispose) (child as any).dispose();
       }
     }
 
@@ -359,6 +396,88 @@ export const ThreeViewer: React.FC<ThreeViewerProps> = ({
         addCurveLine(mc.I, COLOR_PALETTE.I, "Curva Motor I (Imagen)", "Dinámica", "Flujo motor del registro imaginario", 0.26);
         addCurveLine(mc.Pulsion, COLOR_PALETTE.Pulsion, "Hilo Pulsional Motor", "Dinámica", "Circulación pulsional dinámica", 0.22);
         addCurveLine(mc.Sigma, COLOR_PALETTE.Sigma, "Curva Motor Σ (Síntoma)", "Dinámica", "Dinámica sintomática de estabilización", 0.26);
+      }
+
+      // Micro-vectores volumétricos de tamaño reducido circulando en tiempo real por las cintas
+      if (animatedRibbonsGroup) {
+        const UP = new THREE.Vector3(0, 1, 0);
+
+        const createMicroVectorMesh = (colorHex: string | number) => {
+          const grp = new THREE.Group();
+          const col = new THREE.Color(colorHex);
+          const mat = new THREE.MeshStandardMaterial({
+            color: col,
+            emissive: col,
+            emissiveIntensity: 1.4,
+            roughness: 0.22,
+            metalness: 0.35,
+          });
+          const cone = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.20, 10), mat);
+          cone.position.y = 0.10;
+          grp.add(cone);
+          const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.14, 8), mat);
+          cyl.position.y = -0.06;
+          grp.add(cyl);
+          const sph = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), mat);
+          sph.position.y = -0.14;
+          grp.add(sph);
+          return grp;
+        };
+
+        const ribbons: Array<{ key: 'S' | 'I' | 'Sigma' | 'Pulsion'; color: string; clockwise: boolean }> = [
+          { key: 'S', color: COLOR_PALETTE.S, clockwise: true },
+          { key: 'I', color: COLOR_PALETTE.I, clockwise: false },
+          { key: 'Sigma', color: COLOR_PALETTE.Sigma, clockwise: true },
+          { key: 'Pulsion', color: COLOR_PALETTE.Pulsion, clockwise: true },
+        ];
+
+        const phi_S = model.v_S % (2 * Math.PI);
+        const phi_I = model.v_I % (2 * Math.PI);
+        const phi_Sigma = model.v_Sigma % (2 * Math.PI);
+        const s = model.pulsion_attachment_strength;
+
+        const computeV = (cKey: string, angU: number): number => {
+          switch (cKey) {
+            case 'S': return angU + phi_S;
+            case 'I': return -angU + phi_I;
+            case 'Sigma': return 2.0 * angU + phi_Sigma;
+            case 'Pulsion': return angU + phi_I + 0.35 + 0.15 * Math.sin(3.0 * angU) * s;
+            default: return angU;
+          }
+        };
+
+        ribbons.forEach((rib) => {
+          const numV = 8;
+          const dirMult = rib.clockwise ? 1 : -1;
+          for (let k = 0; k < numV; k++) {
+            const basePhase = k / numV;
+            const mv = createMicroVectorMesh(rib.color);
+
+            (mv as any).__updateVector = (t: number) => {
+              const currentPhase = ((basePhase + dirMult * t * 0.08) % 1 + 1) % 1;
+              const u = currentPhase * 2 * Math.PI;
+              const rho = 1.015 * model.r + 0.24 + 0.06;
+              const v0 = computeV(rib.key, u);
+              const [x0, y0, z0] = model.punto(u, v0, rho);
+
+              const du = 0.003;
+              const u1 = u + du;
+              const v1 = computeV(rib.key, u1);
+              const [x1, y1, z1] = model.punto(u1, v1, rho);
+
+              const p0 = new THREE.Vector3(x0, z0, -y0);
+              const p1 = new THREE.Vector3(x1, z1, -y1);
+              const tangent = p1.sub(p0).normalize();
+              if (dirMult < 0) tangent.multiplyScalar(-1);
+
+              mv.position.copy(p0);
+              mv.quaternion.setFromUnitVectors(UP, tangent);
+              mv.scale.set(0.65, 0.65, 0.65);
+            };
+
+            animatedRibbonsGroup.add(mv);
+          }
+        });
       }
     }
 
