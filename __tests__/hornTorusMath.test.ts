@@ -41,8 +41,8 @@ describe('HornTorusFamiliaModel - Core Mathematical Verification', () => {
     
     test('should return correct R (major radius)', () => {
       const model = new HornTorusFamiliaModel(1.0, {}, 0.3);
-      // R = effective_a = 0.1 * 0.85 * 25 = 2.125
-      expect(model.R).toBeCloseTo(2.125);
+      // R = effective_a = 0.1 * 1.10 (GSI Casullo 2008) * 25 = 2.75
+      expect(model.R).toBeCloseTo(2.75);
     });
 
     test('should return correct r (minor radius) based on r_over_R', () => {
@@ -439,11 +439,19 @@ describe('DEFAULT_SCL90R_DATA', () => {
     });
   });
 
-  test('all values should be between 0 and 1', () => {
-    Object.values(DEFAULT_SCL90R_DATA).forEach(value => {
-      expect(value).toBeGreaterThanOrEqual(0);
-      expect(value).toBeLessThanOrEqual(1);
-    });
+  test('values should match Casullo - Pérez (2008) Buenos Aires T=60 cutoffs', () => {
+    expect(DEFAULT_SCL90R_DATA.Somatizacion).toBeCloseTo(1.08);
+    expect(DEFAULT_SCL90R_DATA["Obsesion-Compulsion"]).toBeCloseTo(1.70);
+    expect(DEFAULT_SCL90R_DATA["Sensibilidad Interpersonal"]).toBeCloseTo(1.33);
+    expect(DEFAULT_SCL90R_DATA.Depresion).toBeCloseTo(1.38);
+    expect(DEFAULT_SCL90R_DATA.Ansiedad).toBeCloseTo(1.30);
+    expect(DEFAULT_SCL90R_DATA.Hostilidad).toBeCloseTo(1.33);
+    expect(DEFAULT_SCL90R_DATA["Ansiedad Fobica"]).toBeCloseTo(0.57);
+    expect(DEFAULT_SCL90R_DATA["Ideacion Paranoide"]).toBeCloseTo(1.50);
+    expect(DEFAULT_SCL90R_DATA.Psicoticismo).toBeCloseTo(0.90);
+    expect(DEFAULT_SCL90R_DATA.GSI).toBeCloseTo(1.10);
+    expect(DEFAULT_SCL90R_DATA.PST).toBeCloseTo(52.00);
+    expect(DEFAULT_SCL90R_DATA.PSDI).toBeCloseTo(2.25);
   });
 });
 
@@ -459,3 +467,93 @@ describe('COLOR_PALETTE', () => {
     });
   });
 });
+
+describe('9. Dinámica de Explosión de Psicoticismo y Reconfiguración Sinthomática', () => {
+  const {
+    CLINICAL_CRISIS_SCENARIOS,
+    SCENARIO_PSICOSIS_RECONFIGURACION,
+    sampleScenarioAt,
+    interpolateSclData,
+    CASULLO_2008_MASCULINO_ADULTOS_T60,
+  } = require('../lib/hornTorusMath');
+
+  test('debe aumentar significativamente el estrés y la deformación durante la explosión de psicoticismo (fuera de baremo)', () => {
+    const baselineModel = new HornTorusFamiliaModel(1.0, CASULLO_2008_MASCULINO_ADULTOS_T60, 0.5);
+    const acuteModel = new HornTorusFamiliaModel(
+      1.0,
+      {
+        ...CASULLO_2008_MASCULINO_ADULTOS_T60,
+        Psicoticismo: 3.85,
+        "Ideacion Paranoide": 3.65,
+        Hostilidad: 3.10,
+        Ansiedad: 2.80,
+      },
+      0.5
+    );
+
+    // Muestrear en puntos angulares
+    const u = Math.PI / 4;
+    const v = Math.PI / 2;
+
+    const defBaseline = baselineModel.computeSclDeformation(u, v);
+    const defAcute = acuteModel.computeSclDeformation(u, v);
+
+    // El estrés y la perturbación deben ser notablemente mayores ante la explosión
+    expect(defAcute.stress).toBeGreaterThan(defBaseline.stress);
+  });
+
+  test('debe permitir la reconfiguración topológica post-efracción abriendo el radio del cuello (r/R < 1)', () => {
+    // Pico de crisis: Horn Torus límite con alta deformación
+    const peakModel = new HornTorusFamiliaModel(1.0, { Psicoticismo: 3.85 }, 0.78);
+    expect(peakModel.es_limite).toBe(true);
+    expect(peakModel.radio_agujero).toBeCloseTo(0.0);
+
+    // Reconfiguración sinthomática estabilizada (r/R = 0.945, desasfixia de la garganta)
+    const reconfiguredModel = new HornTorusFamiliaModel(0.945, { Psicoticismo: 1.65 }, 0.32);
+    expect(reconfiguredModel.es_limite).toBe(false);
+    expect(reconfiguredModel.radio_agujero).toBeGreaterThan(0.0);
+    expect(reconfiguredModel.R - reconfiguredModel.r).toBeGreaterThan(0);
+  });
+
+  test('todos los escenarios clínicos deben poseer fases válidas y consistentes', () => {
+    expect(CLINICAL_CRISIS_SCENARIOS.length).toBe(4);
+
+    CLINICAL_CRISIS_SCENARIOS.forEach((sc: any) => {
+      expect(sc.phases.length).toBeGreaterThanOrEqual(3);
+      expect(sc.phases[0].t).toBe(0);
+      expect(sc.phases[sc.phases.length - 1].t).toBe(100);
+      expect(sc.theoreticalDifferential).toBeTruthy();
+    });
+  });
+
+  test('sampleScenarioAt debe interpolar suavemente el perfil psicométrico en 0%, 50% y 100%', () => {
+    const sc = SCENARIO_PSICOSIS_RECONFIGURACION;
+
+    const at0 = sampleScenarioAt(sc, 0);
+    expect(at0.sclData.Psicoticismo).toBeCloseTo(0.90);
+    expect(at0.rOverR).toBeCloseTo(1.000);
+
+    const at50 = sampleScenarioAt(sc, 50);
+    expect(at50.sclData.Psicoticismo).toBeCloseTo(3.85); // Pico fuera de baremo
+    expect(at50.activePhase.isPeak).toBe(true);
+
+    const at100 = sampleScenarioAt(sc, 100);
+    expect(at100.sclData.Psicoticismo).toBeCloseTo(1.65);
+    expect(at100.rOverR).toBeCloseTo(0.945); // Nuevo equilibrio reconfigurado
+    expect(at100.activePhase.isReconfiguration).toBe(true);
+  });
+
+  test('diferenciación teórica: la angustia mide la cercanía al anclaje del fantasma y trauma, distinta del anudamiento', () => {
+    const model = new HornTorusFamiliaModel(1.0);
+
+    // En el punto del fantasma (u = π, v = π/2), la distancia calculada por calculateAngustia debe ser mínima
+    const angustiaAtFantasma = model.calculateAngustia(Math.PI, Math.PI / 2);
+    expect(angustiaAtFantasma).toBeCloseTo(0, 1);
+    expect(angustiaAtFantasma).toBeLessThanOrEqual(model.A_cr); // Dentro de la zona de ruptura crítica
+
+    // Lejos del fantasma y del trauma, la angustia debe ser superior a A_cr
+    const angustiaLejos = model.calculateAngustia(Math.PI / 2, 0);
+    expect(angustiaLejos).toBeGreaterThan(model.A_cr);
+  });
+});
+

@@ -16,6 +16,7 @@ import { DocsReader } from "@/components/DocsReader";
 import { RetrocompatibilityTest } from "@/components/RetrocompatibilityTest";
 import { SignificanteCirculacionViewer } from "@/components/SignificanteCirculacionViewer";
 import { VectorCirculacionViewer } from "@/components/VectorCirculacionViewer";
+import { ClinicalEvolutionSimulator } from "@/components/ClinicalEvolutionSimulator";
 import {
   Orbit,
   Layers,
@@ -30,10 +31,12 @@ import {
   RotateCcw,
   ShieldCheck,
   Wind,
+  Activity,
+  Flame,
 } from "lucide-react";
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<"visor" | "figuras" | "scl" | "docs" | "test" | "circulacion" | "vectores">("visor");
+  const [activeTab, setActiveTab] = useState<"visor" | "crisis" | "figuras" | "scl" | "docs" | "test" | "circulacion" | "vectores">("visor");
 
   // Model parameters
   const [rOverR, setROverR] = useState<number>(1.0);
@@ -42,7 +45,7 @@ export default function HomePage() {
 
   // 3D Visualizer settings
   const [viewMode, setViewMode] = useState<"half" | "full">("half");
-  const [colorMode, setColorMode] = useState<"neutral" | "angustia">("neutral");
+  const [colorMode, setColorMode] = useState<"neutral" | "angustia" | "estres">("neutral");
   const [curveStyle, setCurveStyle] = useState<"section4" | "motor" | "none">("section4");
   const [showDeformation, setShowDeformation] = useState<boolean>(false);
   const [showMarkers, setShowMarkers] = useState<boolean>(true);
@@ -105,6 +108,17 @@ export default function HomePage() {
             >
               <Orbit className="w-3.5 h-3.5" />
               <span>Visor 3D &amp; Invariantes</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("crisis")}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === "crisis"
+                  ? "bg-rose-600 text-white shadow-sm font-semibold ring-1 ring-rose-400/50"
+                  : "text-rose-300 hover:text-white hover:bg-rose-950/40 border border-rose-900/40"
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
+              <span>Simulador Crisis &amp; Reconfiguración</span>
             </button>
             <button
               onClick={() => setActiveTab("figuras")}
@@ -305,16 +319,15 @@ export default function HomePage() {
                   {/* Colormap toggle */}
                   <div className="flex items-center gap-2">
                     <span className="text-slate-400 font-medium">Coloreado:</span>
-                    <button
-                      onClick={() => setColorMode(colorMode === "neutral" ? "angustia" : "neutral")}
-                      className={`px-2.5 py-1 rounded border transition-colors ${
-                        colorMode === "angustia"
-                          ? "bg-rose-950/60 border-rose-500/60 text-rose-300 font-medium"
-                          : "bg-slate-800/40 border-slate-700 text-slate-300"
-                      }`}
+                    <select
+                      value={colorMode}
+                      onChange={(e) => setColorMode(e.target.value as any)}
+                      className="bg-slate-800 border border-slate-700 text-slate-200 rounded px-2 py-1 text-xs outline-none focus:border-indigo-500"
                     >
-                      {colorMode === "angustia" ? "Por Angustia A ≤ π/4" : "Tono Neutral"}
-                    </button>
+                      <option value="neutral">Tono Neutral</option>
+                      <option value="angustia">Por Angustia (A ≤ π/4)</option>
+                      <option value="estres">Estrés y Efracción</option>
+                    </select>
                   </div>
 
                   {/* Curve mode */}
@@ -362,6 +375,18 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+        )}
+
+        {activeTab === "crisis" && (
+          <ClinicalEvolutionSimulator
+            onApplyToGlobal={(newScl, newROverR, newDef) => {
+              setSclData(newScl);
+              setROverR(newROverR);
+              setDeformationFactor(newDef);
+              setShowDeformation(true);
+              setActiveTab("visor");
+            }}
+          />
         )}
 
         {activeTab === "figuras" && <FiguresGallery />}

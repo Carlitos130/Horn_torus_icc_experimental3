@@ -9,7 +9,7 @@ import { Crosshair, Pin, PinOff, Info, Sparkles } from "lucide-react";
 interface ThreeViewerProps {
   model: HornTorusFamiliaModel;
   viewMode: "half" | "full";
-  colorMode: "neutral" | "angustia";
+  colorMode: "neutral" | "angustia" | "estres";
   curveStyle: "section4" | "motor" | "none";
   showDeformation: boolean;
   showMarkers: boolean;
@@ -272,11 +272,16 @@ export const ThreeViewer: React.FC<ThreeViewerProps> = ({
         const u = (i / uSegments) * 2 * Math.PI;
 
         let [x, y, z] = model.punto(u, v);
+        let currentStress = 0;
         if (showDeformation) {
-          const { factor } = model.computeSclDeformation(u, v);
-          x *= factor;
-          y *= factor;
-          z *= 1.0 + (factor - 1.0) * 0.85;
+          const { factor, stress } = model.computeSclDeformation(u, v);
+          currentStress = stress;
+          // Deformación física del tubo toroidal
+          const tubeR = model.r * factor;
+          const rad = model.R + tubeR * Math.cos(v);
+          x = rad * Math.cos(u);
+          y = rad * Math.sin(u);
+          z = tubeR * Math.sin(v);
         }
 
         positions.push(x, z, -y); // Three.js Y is up, standard math Z is up
@@ -300,6 +305,20 @@ export const ThreeViewer: React.FC<ThreeViewerProps> = ({
             const c = colorModerate.clone().lerp(colorNormal, t);
             colors.push(c.r, c.g, c.b);
           }
+        } else if (colorMode === "estres") {
+          // Heatmap de perturbación y estrés psicótico en la superficie
+          const def = showDeformation ? { stress: currentStress } : model.computeSclDeformation(u, v);
+          const sNorm = Math.min(1.0, def.stress / 2.2);
+          const cCalm = new THREE.Color("#0284c7");    // Sky blue
+          const cTension = new THREE.Color("#f59e0b"); // Ámbar
+          const cCrisis = new THREE.Color("#ef4444");  // Carmesí / efracción
+          let c: THREE.Color;
+          if (sNorm < 0.45) {
+            c = cCalm.clone().lerp(cTension, sNorm / 0.45);
+          } else {
+            c = cTension.clone().lerp(cCrisis, (sNorm - 0.45) / 0.55);
+          }
+          colors.push(c.r, c.g, c.b);
         } else {
           // Subtle neutral tone
           const depthShade = 0.65 + 0.35 * Math.sin(v);
